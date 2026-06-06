@@ -23,20 +23,22 @@ que opera sozinho e precisa responder todos os canais pelo celular.
 
 ---
 
-## Arquitetura do sistema completo (4 serviços)
+## Arquitetura do sistema completo
 
 ```
-WhatsApp → [Evolution API] Railway #2
-                ↓ webhook
-Instagram ──────────────────→ [Bridge Service] Railway #3 → [Libredesk] Railway #1
-ML (SDK oficial) ────────────→
-Shopee ──────────────────────→
+Oracle Cloud VM (A1 Flex — 4 OCPUs, 24GB RAM — Always Free)
+└── Docker Compose
+    ├── WhatsApp → [Evolution API] → webhook → [Bridge] → [Libredesk]
+    ├── Instagram ──── polling 30s ──────────→ [Bridge] → [Libredesk]
+    ├── ML (SDK) ───── polling 30s ──────────→ [Bridge] → [Libredesk]
+    └── Shopee ──────── polling 30s (P2) ────→ [Bridge] → [Libredesk]
 
 [Libredesk] ←──── REST API ────── [PWA mobile] Vercel
                                    (lojista acessa pelo celular)
 ```
 
-Este repositório é o **Bridge Service** (Railway #3).
+Este repositório é o **Bridge Service** — roda junto com os demais serviços
+via Docker Compose no VM Oracle.
 
 ---
 
@@ -53,11 +55,14 @@ código de manutenção.
 **SDK oficial ML** (e não fetch manual): `npm install mercadolibre` — mantido pelo
 próprio Mercado Livre, já tem OAuth e refresh de token implementados.
 
-**Railway** (e não Render ou Fly): Render dorme após 15 min de inatividade no free
-tier — WhatsApp cairia. Railway mantém processos ativos.
+**Oracle Cloud Always Free** (e não Railway/Render/Fly): Railway virou trial de 30
+dias. Render dorme após 15 min — WhatsApp cairia. Oracle oferece 4 OCPUs ARM +
+24GB RAM permanentemente gratuitos, suficiente para rodar todos os serviços juntos
+via Docker Compose.
 
-**SQLite** (e não PostgreSQL): Operação de 1 usuário, baixo volume. SQLite sem
-servidor separado. Migrar para PostgreSQL no futuro não exige mudar o schema.
+**SQLite** (e não PostgreSQL para o bridge): Operação de 1 usuário, baixo volume.
+SQLite sem servidor separado. O Libredesk usa seu próprio PostgreSQL (incluso no
+Docker Compose). Migrar bridge para PostgreSQL no futuro não exige mudar o schema.
 
 ---
 
@@ -66,7 +71,7 @@ servidor separado. Migrar para PostgreSQL no futuro não exige mudar o schema.
 - **Webhooks para ML/Instagram:** polling simples é suficiente para baixo volume
 - **Banco de mensagens:** Libredesk já armazena — não duplicar
 - **Multitenancy:** v1 é para um único lojista
-- **Deploy local:** Railway garante 24h de uptime sem depender do computador do cliente
+- **Deploy local:** Oracle Cloud garante 24h de uptime sem depender do computador do cliente
 
 ---
 
@@ -76,6 +81,8 @@ servidor separado. Migrar para PostgreSQL no futuro não exige mudar o schema.
 - **Zaapi:** plataforma asiática, incerto se funciona com contas .com.br da Shopee
 - **Chatwoot fork:** backend em Ruby on Rails — stack diferente, manutenção de fork é custosa
 - **Render.com:** dorme no free tier — inviável para Evolution API e Bridge
+- **Railway:** virou trial de 30 dias em 2024 — não é mais free tier permanente
+- **Fly.io:** free tier muito apertado (256MB/VM) para rodar Libredesk + PostgreSQL + Redis
 
 ---
 
@@ -120,8 +127,13 @@ omnichannel-kaisses/          # este repositório
 │   ├── PRD-megachat.md
 │   ├── ERD-megachat.md
 │   ├── SDD-megachat.md
+│   ├── DEPLOY-oracle.md      # guia passo a passo do deploy no Oracle Cloud
 │   └── CLAUDE-pwa.md         # referência para o repo megachat-pwa
+├── nginx/
+│   └── nginx.conf            # reverse proxy (Libredesk na porta 80)
 ├── data/                     # banco SQLite (ignorado pelo git)
+├── Dockerfile                # build do bridge para Docker
+├── docker-compose.yml        # orquestra todos os serviços no Oracle Cloud
 ├── .env.example              # template de variáveis — EDITE AQUI
 ├── package.json
 └── CLAUDE.md                 # este arquivo
@@ -165,7 +177,7 @@ EVOLUTION_API_KEY, ML_APP_ID, ML_APP_SECRET, ENCRYPTION_KEY.
 - [x] Documentação (PRD, ERD, SDD)
 - [x] Fase 1 — Setup repos GitHub + Codespaces
 - [x] Fase 2 — Node.js, Express, SQLite, schema
-- [ ] **Fase 3 — Deploy Libredesk no Railway** ← PRÓXIMA (feito pelo desenvolvedor)
+- [ ] **Fase 3 — Setup Oracle Cloud VM + Docker Compose** ← PRÓXIMA (feito pelo desenvolvedor — ver docs/DEPLOY-oracle.md)
 - [ ] Fase 4 — Deploy Evolution API + WhatsApp QR (feito pelo desenvolvedor)
 - [ ] Fase 5 — Conector WhatsApp + webhook
 - [ ] Fase 6 — Reply via WhatsApp

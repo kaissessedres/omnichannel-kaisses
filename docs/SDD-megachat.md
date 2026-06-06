@@ -15,22 +15,20 @@ WhatsApp | Instagram | Mercado Livre x2 | Shopee x2
    v           |              |                |
 [EVOLUTION     | Graph API    | SDK oficial    | HTTP
  API]          | polling 30s  | polling 30s    | polling 30s
-(Railway)      |              |                |
    |           |              |                |
    | webhook   +--------------+----------------+
    +--------------------+
                         v
-             [BRIDGE SERVICE]  <- voce constroi (Railway)
-              Node.js
+             [BRIDGE SERVICE]  <- voce constroi
+              Node.js / Docker
               connectors + libredesk client + SQLite DB
                         |
-                        | REST API
+                        | REST API (rede interna Docker)
                         v
-             [LIBREDESK]        (Railway)
+             [LIBREDESK]
               backend, dados, webhooks de reply
                         |
-                REST API|         webhook reply
-                        |
+                REST API|
                         v
              [FRONTEND MOBILE PWA]  <- voce constroi (Vercel)
               React + Tailwind
@@ -41,11 +39,10 @@ WhatsApp | Instagram | Mercado Livre x2 | Shopee x2
               celular / browser
 ```
 
-**4 servicos no total:**
-- Railway #1: Libredesk (PostgreSQL + Redis inclusos)
-- Railway #2: Evolution API (WhatsApp)
-- Railway #3: Bridge Service (Node.js)
-- Vercel: Frontend Mobile PWA (React estatico)
+**Hospedagem:**
+- Oracle Cloud VM A1 Flex (Always Free — 4 OCPUs ARM, 24GB RAM):
+  - Docker Compose rodando: Libredesk + PostgreSQL + Redis + Evolution API + Bridge + nginx
+- Vercel: Frontend Mobile PWA (React estático — free tier, nunca dorme)
 
 ---
 
@@ -240,37 +237,47 @@ WEBHOOK_SECRET=xxxx
 
 ---
 
-## 7. Plano de deploy — 3 serviços Railway + 1 Vercel
+## 7. Plano de deploy — Oracle Cloud + Vercel
 
 ```
-Railway Project: megachat
-├── Service 1: libredesk        (template oficial — PostgreSQL + Redis inclusos)
-├── Service 2: evolution-api    (repo: github.com/EvolutionAPI/evolution-api)
-└── Service 3: megachat-bridge  (repo seu — Node.js detectado automaticamente)
+Oracle Cloud VM (A1 Flex — Always Free)
+└── docker-compose.yml
+    ├── nginx          (porta 80 pública → Libredesk)
+    ├── libredesk      (porta 9000 interna)
+    ├── postgres       (porta 5432 interna)
+    ├── redis          (porta 6379 interna)
+    ├── evolution-api  (porta 8080 — exposta só durante setup QR code)
+    └── bridge         (porta 3000 interna — webhooks via rede Docker)
 
 Vercel Project: megachat-pwa
-└── megachat-pwa               (repo seu — React/Vite detectado automaticamente)
-                               (deploy automático a cada push na branch main)
+└── megachat-pwa      (React/Vite — deploy automático a cada push na branch main)
 ```
+
+Guia completo de setup: `docs/DEPLOY-oracle.md`
 
 ### Desenvolvimento local
 ```bash
-# Terminal 1 — Libredesk
-docker compose up libredesk   # localhost:9000
+# Sobe apenas os serviços de suporte (banco + libredesk + evolution)
+docker compose up postgres redis libredesk evolution -d
 
-# Terminal 2 — Evolution API
-docker compose up evolution   # localhost:8080
-
-# Terminal 3 — Bridge
-node src/index.js             # localhost:3000
-
-# Terminal 4 — Expor bridge para webhooks (desenvolvimento)
-ngrok http 3000
+# Bridge em modo watch (hot reload)
+node --watch src/index.js     # localhost:3000
 ```
 
-### Produção
-Todas as variáveis de ambiente configuradas no dashboard Railway por serviço.
-Os três serviços se comunicam via URLs internas do Railway (sem expor portas públicas desnecessárias).
+### Produção — atualizar o bridge após mudanças no código
+```bash
+# No VM Oracle, dentro do diretório do projeto:
+git pull
+docker compose up -d --build bridge
+```
+
+### Comunicação interna (rede Docker — sem tráfego externo)
+| De | Para | URL usada |
+|---|---|---|
+| Bridge | Libredesk | `http://libredesk:9000` |
+| Bridge | Evolution API | `http://evolution:8080` |
+| Evolution API | Bridge | `http://bridge:3000/webhook/evolution` |
+| Libredesk | Bridge | `http://bridge:3000/webhook/libredesk` |
 
 ---
 
@@ -279,15 +286,15 @@ Os três serviços se comunicam via URLs internas do Railway (sem expor portas p
 | Fase | O que construir | Hospedagem | Entregável |
 |---|---|---|---|
 | 1 | Criar repos GitHub + configurar Codespaces | GitHub | Ambiente de dev pronto |
-| 2 | Setup: Node.js, Express, SQLite, schema do banco | Local/Codespaces | Projeto rodando |
-| 3 | Deploy Libredesk no Railway + client.js | Railway | Inbox vazio no browser |
-| 4 | Deploy Evolution API no Railway + QR code WhatsApp | Railway | WhatsApp conectado |
-| 5 | Conector WhatsApp + webhook evolution.js | Railway | Mensagens WA no Libredesk |
-| 6 | Webhook libredesk.js + sendMessage WA | Railway | Respostas saindo pelo WA |
-| 7 | Conector Mercado Livre (SDK oficial) | Railway | Mensagens ML no inbox |
-| 8 | Conector Instagram (Graph API) | Railway | Instagram no inbox |
+| 2 | Setup: Node.js, Express, SQLite, schema + Docker | Codespaces | Projeto rodando localmente |
+| 3 | Setup Oracle Cloud VM + Docker Compose (todos os serviços) | Oracle Cloud | Inbox Libredesk acessível no browser |
+| 4 | QR code WhatsApp via Evolution API | Oracle Cloud | WhatsApp conectado |
+| 5 | Conector WhatsApp + webhook evolution.js | Oracle Cloud | Mensagens WA no Libredesk |
+| 6 | Webhook libredesk.js + sendMessage WA | Oracle Cloud | Respostas saindo pelo WA |
+| 7 | Conector Mercado Livre (SDK oficial) | Oracle Cloud | Mensagens ML no inbox |
+| 8 | Conector Instagram (Graph API) | Oracle Cloud | Instagram no inbox |
 | 9 | Frontend mobile PWA (React + Tailwind) | Vercel | Lojista usa pelo celular |
-| 10 | Conector Shopee | Railway | Shopee no inbox |
+| 10 | Conector Shopee | Oracle Cloud | Shopee no inbox |
 | 11 | Testes end-to-end + ajustes mobile | — | Sistema completo em produção |
 
 ---

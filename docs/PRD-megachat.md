@@ -94,7 +94,7 @@ uma operação de pessoa única.
 
 | Requisito | Descrição |
 |---|---|
-| Custo | Zero — Railway free tier (backend) + Vercel free tier (frontend) |
+| Custo | Zero — Oracle Cloud Always Free (backend) + Vercel free tier (frontend) |
 | Mobile-first | Interface PWA otimizada para telas de 375px+; touch-friendly |
 | Disponibilidade | Backend Railway 24h; frontend Vercel estático — nunca dorme |
 | Latência de sync | Mensagens aparecem em até 60 segundos |
@@ -130,9 +130,10 @@ uma operação de pessoa única.
 | Risco | Probabilidade | Impacto | Mitigação |
 |---|---|---|---|
 | Evolution API banir a conta WhatsApp | Baixa-Média | Alto | Evolution API é mais maduro e amplamente usado que whatsapp-web.js puro; uso moderado, sem spam |
-| Evolution API sair do ar ou breaking change | Baixa | Alto | Projeto ativo com 5k+ stars; manter versão pinada no package.json |
+| Evolution API sair do ar ou breaking change | Baixa | Alto | Projeto ativo com 5k+ stars; manter versão pinada no docker-compose.yml |
 | Shopee bloquear acesso por credencial | Média | Médio | Iniciar pelo Open Platform; credencial como fallback de teste |
-| Railway free tier ser insuficiente | Baixa | Médio | Sistema agora tem 3 serviços (Libredesk + Evolution + Bridge); monitorar uso |
+| Oracle Cloud mudar política Always Free | Muito baixa | Alto | Oracle tem histórico sólido de respeitar Always Free; migrar para Fly.io como plano B |
+| VM Oracle ficar sem recursos | Baixa | Médio | 4 OCPUs + 24GB RAM é mais que suficiente para o volume atual; monitorar com `docker stats` |
 | API do ML mudar sem aviso | Baixa | Médio | SDK oficial do ML absorve mudanças de baixo nível; atualizar só o conector |
 | Token OAuth expirar sem renovação | Média | Alto | Lógica de refresh automático obrigatória — ML expira em 6h |
 
@@ -140,9 +141,12 @@ uma operação de pessoa única.
 
 ## 10. Dependências externas
 
-**Backend (Railway):**
+**Backend (Oracle Cloud Always Free — VM A1 Flex):**
+- Docker Compose (orquestra todos os serviços)
 - Libredesk (self-hosted — github.com/abhinavxd/libredesk)
 - Evolution API (self-hosted — github.com/EvolutionAPI/evolution-api)
+- PostgreSQL 15 + Redis 7 (para o Libredesk)
+- nginx (reverse proxy)
 - mercadolibre npm SDK (oficial — github.com/mercadolibre/nodejs-sdk)
 
 **Frontend (Vercel):**
