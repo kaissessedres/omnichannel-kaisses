@@ -1,0 +1,100 @@
+name: Tentar criar VM Oracle (megachat-vm)
+
+# Tenta criar o VM A1 Flex periodicamente até a Oracle liberar capacidade
+# na região (erro comum do Always Free: "Out of host capacity").
+# Roda de forma independente do Codespace — não depende dele estar aberto.
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  retry-launch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configurar OCI CLI
+        run: |
+          mkdir -p ~/.oci
+          printf '%s' "${{ secrets.OCI_PRIVATE_KEY }}" > ~/.oci/key.pem
+          chmod 600 ~/.oci/key.pem
+          cat > ~/.oci/config << EOF
+          [DEFAULT]
+          user=${{ secrets.OCI_USER_OCID }}
+          fingerprint=${{ secrets.OCI_FINGERPRINT }}
+          tenancy=${{ secrets.OCI_TENANCY_OCID }}
+          region=${{ secrets.OCI_REGION }}
+          key_file=~/.oci/key.pem
+          EOF
+          chmod 600 ~/.oci/config
+          pip install --quiet oci-cli
+
+      - name: Verificar se o VM já existe
+        id: check
+        run: |
+          EXISTING_ID=$(oci compute instance list \
+            --compartment-id "${{ secrets.OCI_TENANCY_OCID }}" \
+            --display-name "megachat-vm" \
+            --lifecycle-state RUNNING \
+            --query "data[0].id" --raw-output 2>/dev/null)
+          if [ -n "$EXISTING_ID" ] && [ "$EXISTING_ID" != "null" ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "✅ VM já existe ($EXISTING_ID) — nada a fazer. Considere desabilitar este workflow."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Tentar criar o VM
+        if: steps.check.outputs.exists == 'false'
+        id: launch
+        run: |
+          set +e
+          OUTPUT=$(oci compute instance launch \
+            --compartment-id "${{ secrets.OCI_TENANCY_OCID }}" \
+            --availability-domain "${{ secrets.OCI_AD }}" \
+            --display-name "megachat-vm" \
+            --shape "VM.Standard.A1.Flex" \
+            --shape-config '{"ocpus": 4, "memoryInGBs": 24}' \
+            --image-id "${{ secrets.OCI_IMAGE_ID }}" \
+            --subnet-id "${{ secrets.OCI_SUBNET_ID }}" \
+            --assign-public-ip true \
+            --metadata "{\"ssh_authorized_keys\": \"${{ secrets.VM_SSH_PUBLIC_KEY }}\"}" \
+            --query "data.id" --raw-output 2>&1)
+
+          if echo "$OUTPUT" | grep -q "^ocid1.instance"; then
+            echo "status=success" >> "$GITHUB_OUTPUT"
+            echo "instance_id=$OUTPUT" >> "$GITHUB_OUTPUT"
+            echo "🎉 VM criado: $OUTPUT"
+          elif echo "$OUTPUT" | grep -qi "Out of host capacity"; then
+            echo "status=no_capacity" >> "$GITHUB_OUTPUT"
+            echo "Sem capacidade nesta tentativa — o agendamento tenta de novo em 15min."
+          else
+            echo "status=error" >> "$GITHUB_OUTPUT"
+            echo "::error::Erro inesperado: $OUTPUT"
+            exit 1
+          fi
+
+      - name: Buscar IP público e abrir issue de aviso
+        if: steps.launch.outputs.status == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sleep 30
+          IP=$(oci compute instance list-vnics \
+            --instance-id "${{ steps.launch.outputs.instance_id }}" \
+            --query "data[0].\"public-ip\"" --raw-output)
+
+          gh issue create \
+            --repo "${{ github.repository }}" \
+            --title "VM megachat-vm criado com sucesso" \
+            --body "Instance ID: \`${{ steps.launch.outputs.instance_id }}\`
+          IP público: \`$IP\`
+
+          Acesso via SSH: \`ssh -i ~/.ssh/megachat_vm ubuntu@$IP\`
+
+          Próximo passo: seguir a Parte 2 do docs/DEPLOY-oracle.md.
+          Depois disso, **desabilite este workflow** em Settings → Actions → Workflows."
