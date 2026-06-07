@@ -21,11 +21,10 @@ function getKey() {
 // Formato gravado: "iv:authTag:ciphertext", tudo em hex numa string só —
 // cabe direto na coluna TEXT existente, sem mudar o schema.
 //
-// ⚠️  Quem for persistir ChannelAccount.credentials (fluxo de OAuth das
-//     Fases 7/8/10 — ainda não existe: hoje só getCredentials() consome o
-//     valor já salvo) PRECISA chamar encrypt(JSON.stringify(creds)) antes
-//     do INSERT/UPDATE. Sem isso, getCredentials() vai rejeitar o valor em
-//     texto plano como "formato inesperado" — decrypt não tem fallback.
+// Para PERSISTIR credenciais não chame encrypt() direto: use setCredentials()
+// (abaixo) ou as funções createAccount/saveCredentials de db/queries.js, que já
+// cifram. getCredentials() rejeita texto plano como "formato inesperado" —
+// decrypt não tem fallback, então gravar sem cifrar deixa a conta ilegível.
 function encrypt(plaintext) {
   const iv = crypto.randomBytes(IV_LENGTH);
   const cipher = crypto.createCipheriv(ALGORITHM, getKey(), iv);
@@ -54,4 +53,12 @@ function getCredentials(channelAccount) {
   return JSON.parse(decrypt(raw));
 }
 
-module.exports = { encrypt, decrypt, getCredentials };
+// Inverso de getCredentials: serializa e cifra o objeto de credenciais para
+// gravar na coluna. Objeto vazio/nulo vira NULL (conta sem token — ex: WhatsApp,
+// ou antes do OAuth) — simétrico ao {} que getCredentials devolve ao ler NULL.
+function setCredentials(credentials) {
+  if (!credentials || Object.keys(credentials).length === 0) return null;
+  return encrypt(JSON.stringify(credentials));
+}
+
+module.exports = { encrypt, decrypt, getCredentials, setCredentials };

@@ -1,6 +1,7 @@
 # ERD — Megachat Bridge Service
 **Versão:** 0.4  
 **Changelog:**
+- v0.5 — Lado de escrita das credenciais implementado (`createAccount`/`saveCredentials` cifram via `setCredentials`); conector ML passa a renovar e persistir o token rotacionado; pendência restante é só o fluxo OAuth de ponta (Fases 7/8/10)
 - v0.4 — Criptografia de `credentials` saiu do papel: implementada com AES-256-GCM (`src/db/crypto.js`); nota de design atualizada de "usaremos" para o mecanismo real
 - v0.3 — Adicionada nota sobre frontend mobile não requerer entidades novas; campo `evolution_instance_id` documentado com clareza
 - v0.2 — Adicionado campo evolution_instance_id em ChannelAccount; WhatsApp não armazena sessão localmente
@@ -100,10 +101,14 @@ schema. Os conectores nunca tocam o campo cru: leem via `getCredentials()`, que
 decifra e faz o parse do JSON. WhatsApp não precisa disso pois sua sessão fica no
 Evolution API (campo fica nulo).
 
-> ⚠️ O lado de **escrita** (persistir os tokens depois do fluxo OAuth — Fases
-> 7/8/10) ainda não existe. Quem o construir DEVE chamar
-> `encrypt(JSON.stringify(creds))` antes do INSERT/UPDATE: `getCredentials()`
-> rejeita valores em texto plano como "formato inesperado", sem fallback.
+O lado de **escrita** já existe: `createAccount` (criar conta com tokens) e
+`saveCredentials` (atualizar tokens) em `src/db/queries.js` cifram via
+`setCredentials` antes de gravar — não chame `encrypt()` na mão. O conector do
+Mercado Livre usa `saveCredentials` para persistir o token renovado quando o
+access token de 6h expira (o ML rotaciona o `refresh_token`, que é single-use).
+O que ainda falta (Fases 7/8/10) é o **fluxo OAuth de ponta** que obtém o primeiro
+token — troca do `code` pelo token via redirect URI — que depende do VM com URL
+pública e das credenciais reais de cada app.
 
 **SQLite é suficiente?**
 Sim. Com um único usuário e baixo volume, SQLite é mais simples que PostgreSQL e não

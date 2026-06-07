@@ -3,12 +3,14 @@
 // sem precisar de um arquivo em disco.
 
 process.env.DB_PATH = ':memory:';
+process.env.ENCRYPTION_KEY = 'a'.repeat(64); // necessário p/ createAccount/saveCredentials cifrarem
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const { getDb, initDb } = require('../../src/db/schema');
 const queries = require('../../src/db/queries');
+const { getCredentials } = require('../../src/db/crypto');
 const { seedAccount } = require('../helpers');
 
 test.before(() => {
@@ -153,4 +155,48 @@ test('updateLastSynced grava o timestamp em ChannelAccount', () => {
 
   const account = getDb().prepare('SELECT last_synced_at FROM ChannelAccount WHERE id = ?').get(accountId);
   assert.ok(account.last_synced_at, 'last_synced_at deveria ter sido preenchido');
+});
+
+// ── Lado de escrita das credenciais (createAccount / saveCredentials) ──
+
+test('createAccount cifra credentials no banco e getCredentials lê de volta', () => {
+  const { lastInsertRowid } = queries.createAccount({
+    channelType: 'mercadolivre',
+    accountLabel: 'ML Conta 1',
+    credentials: { access_token: 'tok', refresh_token: 'ref', seller_id: '7' },
+    libredeskInboxId: 3,
+  });
+
+  const account = queries.getAccountById(lastInsertRowid);
+  // no banco está cifrado — o token em texto plano NÃO aparece na coluna
+  assert.doesNotMatch(account.credentials, /access_token|tok|ref/);
+  // mas decifra de volta no objeto original
+  assert.deepEqual(getCredentials(account), { access_token: 'tok', refresh_token: 'ref', seller_id: '7' });
+});
+
+test('createAccount grava credentials NULL para conta sem token (WhatsApp)', () => {
+  const { lastInsertRowid } = queries.createAccount({
+    channelType: 'whatsapp',
+    accountLabel: 'WhatsApp Loja',
+    evolutionInstanceId: 'megachat-wa-1',
+    libredeskInboxId: 1,
+  });
+
+  const account = queries.getAccountById(lastInsertRowid);
+  assert.equal(account.credentials, null);
+  assert.deepEqual(getCredentials(account), {});
+});
+
+test('saveCredentials atualiza (cifrado) os tokens de uma conta — caminho do refresh rotacionado', () => {
+  const { lastInsertRowid } = queries.createAccount({
+    channelType: 'mercadolivre',
+    accountLabel: 'ML Conta 1',
+    credentials: { access_token: 'OLD', refresh_token: 'OLD_REF', seller_id: '7' },
+    libredeskInboxId: 3,
+  });
+
+  queries.saveCredentials(lastInsertRowid, { access_token: 'NEW', refresh_token: 'NEW_REF', seller_id: '7' });
+
+  const account = queries.getAccountById(lastInsertRowid);
+  assert.deepEqual(getCredentials(account), { access_token: 'NEW', refresh_token: 'NEW_REF', seller_id: '7' });
 });

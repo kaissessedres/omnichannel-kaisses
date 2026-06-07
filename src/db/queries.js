@@ -1,4 +1,33 @@
 const { getDb } = require('./schema');
+const { setCredentials } = require('./crypto');
+
+// Insere uma conta de canal. `credentials` é um objeto em texto plano (ex:
+// { access_token, refresh_token, seller_id }) — é cifrado aqui antes de gravar
+// (ver setCredentials). Para WhatsApp, deixe credentials vazio: a sessão fica
+// no Evolution API, não no banco.
+function createAccount({ channelType, accountLabel, credentials = {}, evolutionInstanceId = null, libredeskInboxId, status = 'active' }) {
+  return getDb()
+    .prepare(`
+      INSERT INTO ChannelAccount
+        (channel_type, account_label, credentials, evolution_instance_id, libredesk_inbox_id, status)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `)
+    .run(channelType, accountLabel, setCredentials(credentials), evolutionInstanceId, libredeskInboxId, status);
+}
+
+function getAccountById(id) {
+  return getDb().prepare('SELECT * FROM ChannelAccount WHERE id = ?').get(id);
+}
+
+// Atualiza (cifrado) as credenciais de uma conta existente. Usado quando o
+// token OAuth é rotacionado — ex: o conector ML troca o access_token expirado e
+// recebe um refresh_token novo (single-use) que PRECISA ser persistido, senão o
+// próximo refresh falha. `credentials` é o objeto completo em texto plano.
+function saveCredentials(channelAccountId, credentials) {
+  getDb()
+    .prepare('UPDATE ChannelAccount SET credentials = ? WHERE id = ?')
+    .run(setCredentials(credentials), channelAccountId);
+}
 
 function findMapping(channelAccountId, externalConversationId) {
   return getDb()
@@ -72,6 +101,9 @@ function updateLastSynced(channelAccountId) {
 }
 
 module.exports = {
+  createAccount,
+  getAccountById,
+  saveCredentials,
   findMapping,
   createMapping,
   findMappingByLibredesk,

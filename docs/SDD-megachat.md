@@ -1,6 +1,7 @@
 # SDD — Software Design Document: Megachat Bridge
-**Versão:** 0.4  
+**Versão:** 0.5  
 **Changelog:**
+- v0.5 — Seção 6.1 atualizada: lado de escrita das credenciais implementado (`createAccount`/`saveCredentials`) e renovação+persistência de token do ML (o SDK não renova sozinho); pendência restante é só o fluxo OAuth de ponta
 - v0.4 — Hospedagem migrada de Railway para Oracle Cloud Always Free (refletido na stack e nos exemplos de env); nova seção 6.1 documentando a segurança implementada (criptografia AES-256-GCM de `credentials` + validação de assinatura HMAC-SHA256 dos webhooks); formato real do `ENCRYPTION_KEY` corrigido
 - v0.3 — Adicionado frontend mobile PWA (React/Vercel); arquitetura agora tem 4 serviços; seção 9 dedicada ao frontend; stack e deploy atualizados
 - v0.2 — Evolution API adicionado como serviço dedicado WhatsApp; SDK oficial ML; webhook Evolution API; 3 serviços Railway
@@ -291,9 +292,15 @@ nginx) e está fora do escopo do bridge.
 - **Chave:** env var `ENCRYPTION_KEY`, 32 bytes em hex (`openssl rand -hex 32`).
 - **Formato gravado:** `iv:authTag:ciphertext` (hex, numa string só — cabe na
   coluna TEXT, sem mudar schema).
-- **Pendência conhecida:** o lado de *escrita* (salvar tokens após o OAuth) é das
-  Fases 7/8/10 e ainda não existe — quem o construir precisa chamar `encrypt()`
-  antes de gravar (ver aviso em `src/db/crypto.js` e no ERD).
+- **Lado de escrita:** `createAccount` / `saveCredentials` em `src/db/queries.js`
+  cifram via `setCredentials` antes de gravar (não se chama `encrypt()` na mão).
+- **Renovação de token do ML:** o SDK oficial **não** renova sozinho. O conector
+  (`src/connectors/mercadolivre.js`) detecta o 401 de token expirado, chama
+  `refreshAccessToken` e **persiste** os tokens novos via `saveCredentials` — o
+  ML rotaciona o `refresh_token` (single-use), então não persistir quebraria a
+  renovação seguinte.
+- **Pendência restante:** o fluxo OAuth de ponta (trocar o `code` pelo primeiro
+  token via redirect URI) — Fases 7/8/10 — depende do VM com URL pública.
 
 ### Validação de assinatura dos webhooks do Libredesk
 - **O quê:** quando o reply do lojista chega em `POST /webhook/libredesk`, o bridge

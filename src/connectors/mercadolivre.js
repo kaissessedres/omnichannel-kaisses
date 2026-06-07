@@ -1,19 +1,59 @@
 // Conector Mercado Livre via SDK oficial
 // npm: mercadolibre (github.com/mercadolibre/nodejs-sdk)
-// Auth: OAuth 2.0 — access token expira em 6h, refresh automático pelo SDK
+// Auth: OAuth 2.0 — access token expira em 6h. ATENÇÃO: o SDK NÃO faz refresh
+//   sozinho (só quando chamamos refreshAccessToken explicitamente); e o ML
+//   rotaciona o refresh_token a cada uso (single-use). Por isso o conector
+//   detecta o token expirado, renova e PERSISTE os tokens novos — ver
+//   callWithRefresh abaixo.
 // Polling: GET /messages/unread a cada 30s
 
 const Meli = require('mercadolibre');
 const { getCredentials } = require('../db/crypto');
+const { saveCredentials } = require('../db/queries');
 
-function getClient(channelAccount) {
-  const creds = getCredentials(channelAccount);
+function getClient(creds) {
   return new Meli.Meli(
     process.env.ML_APP_ID,
     process.env.ML_APP_SECRET,
     creds.access_token,
     creds.refresh_token
   );
+}
+
+// Um 401 do ML não chega como erro do needle — vem no corpo da resposta
+// ({ message: 'invalid_token', status: 401 }). É assim que detectamos expiração.
+function isTokenExpired(body) {
+  return !!body && (body.status === 401 || body.message === 'invalid_token');
+}
+
+// Promisifica refreshAccessToken. Em sucesso, o SDK já atualiza o token interno
+// do client; devolvemos o corpo ({ access_token, refresh_token, ... }).
+function refreshAccessToken(client) {
+  return new Promise((resolve, reject) => {
+    client.refreshAccessToken((err, body) => {
+      if (err || !body || !body.access_token) {
+        return reject(new Error(`ML refresh de token falhou: ${err || body?.message || 'sem access_token'}`));
+      }
+      resolve(body);
+    });
+  });
+}
+
+// Executa run(client, creds) com o token atual. Se o ML responder "token
+// expirado", renova, PERSISTE os tokens rotacionados (o refresh_token é
+// single-use — não persistir quebra a próxima renovação) e tenta uma vez mais.
+async function callWithRefresh(channelAccount, run) {
+  const creds = getCredentials(channelAccount);
+  const client = getClient(creds);
+
+  const result = await run(client, creds);
+  if (!isTokenExpired(result)) return result;
+
+  const fresh = await refreshAccessToken(client);
+  const rotated = { ...creds, access_token: fresh.access_token, refresh_token: fresh.refresh_token };
+  if (channelAccount.id) saveCredentials(channelAccount.id, rotated);
+
+  return run(client, rotated); // client já está com o token novo no _parameters
 }
 
 function meliGet(client, path, params = {}) {
@@ -39,13 +79,11 @@ function meliPost(client, path, body) {
 }
 
 async function init(channelAccount) {
-  const client = getClient(channelAccount);
-  await meliGet(client, '/users/me');
+  await callWithRefresh(channelAccount, (client) => meliGet(client, '/users/me'));
 }
 
 async function fetchNewMessages(channelAccount, lastMessageId) {
-  const client = getClient(channelAccount);
-  const data = await meliGet(client, '/messages/unread');
+  const data = await callWithRefresh(channelAccount, (client) => meliGet(client, '/messages/unread'));
 
   const messages = [];
   for (const pack of (data.results || [])) {
@@ -63,17 +101,17 @@ async function fetchNewMessages(channelAccount, lastMessageId) {
 }
 
 async function sendMessage(channelAccount, conversationId, text) {
-  const client = getClient(channelAccount);
-  const creds = getCredentials(channelAccount);
-  return meliPost(client, `/messages/packs/${conversationId}/sellers/${creds.seller_id}`, {
-    text: { plain: text },
-  });
+  return callWithRefresh(channelAccount, (client, creds) =>
+    meliPost(client, `/messages/packs/${conversationId}/sellers/${creds.seller_id}`, {
+      text: { plain: text },
+    })
+  );
 }
 
 async function getContact(channelAccount, userId) {
-  const client = getClient(channelAccount);
+  const client = getClient(getCredentials(channelAccount));
   const data = await meliGet(client, `/users/${userId}`).catch(() => null);
-  if (!data) return { name: userId, identifier: userId };
+  if (!data || isTokenExpired(data)) return { name: userId, identifier: userId };
   return { name: data.nickname || userId, identifier: userId };
 }
 

@@ -11,9 +11,12 @@ const needle = require('needle');
 process.env.ML_APP_ID = 'app-id';
 process.env.ML_APP_SECRET = 'app-secret';
 process.env.ENCRYPTION_KEY = 'a'.repeat(64);
+process.env.DB_PATH = ':memory:'; // p/ os testes de refresh, que persistem o token rotacionado
 
 const mercadolivre = require('../../src/connectors/mercadolivre');
-const { encrypt } = require('../../src/db/crypto');
+const { encrypt, getCredentials } = require('../../src/db/crypto');
+const { initDb } = require('../../src/db/schema');
+const queries = require('../../src/db/queries');
 
 // Em produção `credentials` chega cifrado (ver src/db/crypto.js) — o
 // conector decifra antes de usar, então o teste precisa cifrar também
@@ -137,4 +140,73 @@ test('getContact cai para o ID quando a busca falha', async () => {
     const contact = await mercadolivre.getContact(account, 'comprador-1');
     assert.deepEqual(contact, { name: 'comprador-1', identifier: 'comprador-1' });
   });
+});
+
+// ── Refresh de token expirado + persistência (o ML rotaciona o refresh_token) ──
+// O 401 do ML não vem como erro do needle: chega no corpo
+// ({ message:'invalid_token', status:401 }). O conector detecta, renova via
+// refreshAccessToken, persiste os tokens novos e refaz a chamada.
+
+test('fetchNewMessages renova o token expirado, PERSISTE o token rotacionado e refaz a chamada', async () => {
+  initDb();
+  const { lastInsertRowid: accountId } = queries.createAccount({
+    channelType: 'mercadolivre',
+    accountLabel: 'ML Conta refresh',
+    credentials: { access_token: 'OLD_AT', refresh_token: 'OLD_REF', seller_id: '999' },
+    libredeskInboxId: 2,
+  });
+  const accountFromDb = queries.getAccountById(accountId);
+
+  let getCalls = 0;
+  const urls = [];
+  await withMockNeedle({
+    // 1ª chamada: token expirado (401 no corpo). 2ª (retry): resultados válidos.
+    get: (url, cb) => {
+      getCalls += 1;
+      urls.push(url);
+      if (getCalls === 1) return cb(null, { body: { message: 'invalid_token', status: 401 } });
+      return cb(null, { body: { results: [
+        { id: 1, pack_id: 10, from: { user_id: 'u1' }, text: { plain: 'oi' }, date_created: '2026-06-02T10:00:00Z' },
+      ] } });
+    },
+    // refreshAccessToken usa o 3º argumento do callback do needle como corpo —
+    // é dele que o SDK extrai os tokens novos pra atualizar o client interno.
+    post: (_url, _body, cb) => cb(null, { statusCode: 200 }, { access_token: 'NEW_AT', refresh_token: 'NEW_REF' }),
+  }, async () => {
+    const messages = await mercadolivre.fetchNewMessages(accountFromDb, null);
+    assert.equal(messages.length, 1);
+    assert.equal(messages[0].text, 'oi');
+  });
+
+  // o retry usou o token NOVO (o SDK injeta access_token na query string)
+  assert.equal(getCalls, 2);
+  assert.match(urls[1], /access_token=NEW_AT/);
+
+  // e o token rotacionado foi persistido (cifrado) no banco — o próximo poll já lê o novo
+  assert.deepEqual(getCredentials(queries.getAccountById(accountId)), {
+    access_token: 'NEW_AT',
+    refresh_token: 'NEW_REF',
+    seller_id: '999',
+  });
+});
+
+test('fetchNewMessages propaga erro quando o próprio refresh falha (sem access_token novo)', async () => {
+  initDb();
+  const { lastInsertRowid: accountId } = queries.createAccount({
+    channelType: 'mercadolivre',
+    accountLabel: 'ML refresh quebrado',
+    credentials: { access_token: 'OLD_AT', refresh_token: 'DEAD_REF', seller_id: '1' },
+    libredeskInboxId: 2,
+  });
+  const accountFromDb = queries.getAccountById(accountId);
+
+  await withMockNeedle({
+    get: (_url, cb) => cb(null, { body: { message: 'invalid_token', status: 401 } }),
+    post: (_url, _body, cb) => cb(null, { statusCode: 400 }, { message: 'invalid_grant' }),
+  }, async () => {
+    await assert.rejects(() => mercadolivre.fetchNewMessages(accountFromDb, null), /ML refresh de token falhou/);
+  });
+
+  // refresh falhou → tokens antigos preservados (não sobrescreve com lixo)
+  assert.equal(getCredentials(queries.getAccountById(accountId)).refresh_token, 'DEAD_REF');
 });

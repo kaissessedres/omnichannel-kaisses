@@ -8,7 +8,7 @@ const assert = require('node:assert/strict');
 
 process.env.ENCRYPTION_KEY = 'b'.repeat(64);
 
-const { encrypt, decrypt, getCredentials } = require('../../src/db/crypto');
+const { encrypt, decrypt, getCredentials, setCredentials } = require('../../src/db/crypto');
 
 // Troca ENCRYPTION_KEY temporariamente — só usado nos testes que checam o
 // comportamento com chave ausente/inválida, restaura no final mesmo se `fn` lançar.
@@ -72,4 +72,20 @@ test('getCredentials devolve {} quando a conta ainda não tem credentials salvas
   assert.deepEqual(getCredentials({ credentials: undefined }), {});
   assert.deepEqual(getCredentials({ credentials: '' }), {});
   assert.deepEqual(getCredentials({}), {});
+});
+
+test('setCredentials cifra o objeto e getCredentials lê de volta (round-trip simétrico do lado de escrita)', () => {
+  const creds = { access_token: 'tok', refresh_token: 'ref', seller_id: '999' };
+  const stored = setCredentials(creds);
+  // está cifrado, não é o JSON em texto plano
+  assert.match(stored, /^[0-9a-f]+:[0-9a-f]+:[0-9a-f]+$/);
+  assert.notEqual(stored, JSON.stringify(creds));
+  // e decifra de volta no objeto original
+  assert.deepEqual(getCredentials({ credentials: stored }), creds);
+});
+
+test('setCredentials devolve null para objeto vazio/nulo (conta sem token — ex: WhatsApp)', () => {
+  assert.equal(setCredentials({}), null);
+  assert.equal(setCredentials(null), null);
+  assert.equal(setCredentials(undefined), null);
 });

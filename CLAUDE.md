@@ -92,8 +92,12 @@ Docker Compose). Migrar bridge para PostgreSQL no futuro não exige mudar o sche
 aprovação na Shopee Open Platform (processo burocrático). Fallback: credenciais
 diretas como o Olist faz, mas com risco de bloqueio de conta.
 
-⚠️ **Token ML expira em 6h:** refresh automático obrigatório. O SDK oficial cuida
-disso, mas precisa do refresh_token salvo.
+⚠️ **Token ML expira em 6h:** ao contrário do que se supôs no início, o SDK
+oficial **não** renova sozinho — só quando chamamos `refreshAccessToken`. Além
+disso o ML rotaciona o `refresh_token` a cada uso (single-use). O conector
+`src/connectors/mercadolivre.js` já trata isso: detecta o 401 de token expirado,
+renova e **persiste** os tokens novos via `saveCredentials` (`src/db/queries.js`).
+Sem persistir o refresh_token rotacionado, a renovação seguinte falharia.
 
 ⚠️ **WhatsApp ToS:** Evolution API usa sessão não-oficial. Usar com moderação,
 sem envio em massa. Risco de ban existe mas é baixo-médio.
@@ -226,13 +230,17 @@ falta de capacidade ("Out of host capacity" — há workflow de retry em
 `.github/workflows/oracle-vm-retry.yml`). Enquanto isso, adiantamos o que não
 depende do VM:
 
-- **Suíte de testes:** `npm test` (node --test) — **71 testes**, cobrindo
+- **Suíte de testes:** `npm test` (node --test) — **78 testes**, cobrindo
   conectores, db, poller e webhooks. Ver `test/`.
 - **Criptografia de `credentials`:** AES-256-GCM em `src/db/crypto.js`
-  (`ENCRYPTION_KEY`). Ver ERD e SDD §6.1. ⚠️ Falta o lado de *escrita* (salvar
-  tokens pós-OAuth — Fases 7/8/10): quem o construir deve chamar `encrypt()`.
+  (`ENCRYPTION_KEY`). Lado de escrita pronto: `createAccount`/`saveCredentials`
+  em `src/db/queries.js` cifram via `setCredentials`. Ver ERD e SDD §6.1.
+- **Renovação de token do ML:** o conector detecta o 401 de token expirado,
+  renova e persiste o `refresh_token` rotacionado (o SDK não faz isso sozinho).
 - **Validação de assinatura dos webhooks:** HMAC-SHA256 (`X-Libredesk-Signature`)
   em `src/webhook/libredesk.js`, com `WEBHOOK_SECRET`. Ver SDD §6.1.
+- **Falta (depende do VM):** o fluxo OAuth de ponta que obtém o primeiro token
+  (troca do `code` via redirect URI) — Fases 7/8/10.
 
 ---
 
