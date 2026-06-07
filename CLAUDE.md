@@ -126,6 +126,7 @@ omnichannel-kaisses/          # este repositório
 │   └── index.js              # entry point
 ├── test/                     # suíte automatizada — `npm test` (node --test)
 │   ├── helpers.js            # mocks e servidor HTTP efêmero compartilhados
+│   ├── poller.test.js
 │   ├── db/
 │   │   └── queries.test.js
 │   ├── connectors/

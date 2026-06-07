@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(git add *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(node --test*)",
+      "Bash(npm test)",
+      "Bash(gh codespace list*)"
     ]
   }
 }
