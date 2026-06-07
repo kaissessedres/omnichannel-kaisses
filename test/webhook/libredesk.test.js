@@ -7,6 +7,7 @@ process.env.DB_PATH = ':memory:';
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const crypto = require('node:crypto');
 
 const { getDb, initDb } = require('../../src/db/schema');
 const queries = require('../../src/db/queries');
@@ -16,6 +17,30 @@ const { startRouterServer, waitFor, seedAccount } = require('../helpers');
 
 const EXTERNAL_CONVERSATION_ID = '5511999999999';
 const LIBREDESK_CONVERSATION_ID = 777;
+
+// Mesmo "segredo compartilhado" que entraria no .env do bridge E no painel
+// do Libredesk (Admin → Integrations → Webhooks) — usado só nos testes que
+// configuram WEBHOOK_SECRET para exercitar a validação de assinatura.
+const TEST_WEBHOOK_SECRET = 'segredo-compartilhado-de-teste';
+
+// Troca WEBHOOK_SECRET temporariamente (como withEncryptionKey em
+// crypto.test.js) e restaura no final mesmo se `fn` lançar — preserva o
+// padrão "sem secret configurado" que as demais suítes deste arquivo esperam.
+async function withWebhookSecret(value, fn) {
+  const original = process.env.WEBHOOK_SECRET;
+  if (value === undefined) delete process.env.WEBHOOK_SECRET;
+  else process.env.WEBHOOK_SECRET = value;
+  try {
+    return await fn();
+  } finally {
+    if (original === undefined) delete process.env.WEBHOOK_SECRET;
+    else process.env.WEBHOOK_SECRET = original;
+  }
+}
+
+function hmacSignature(rawBody, secret) {
+  return `sha256=${crypto.createHmac('sha256', secret).update(rawBody).digest('hex')}`;
+}
 
 let server;
 let accountId;
@@ -46,12 +71,18 @@ test.beforeEach(() => {
   mappingId = lastInsertRowid;
 });
 
-function postReply(payload) {
-  return fetch(`${server.baseUrl}/webhook/libredesk`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
+// `secret`: assina corretamente o corpo com esse segredo (simula o Libredesk
+// configurado com o mesmo WEBHOOK_SECRET — ou um diferente, pra simular
+// adulteração/dessincronia). `signature`: manda esse valor cru no header,
+// sem calcular nada — pra testar formatos malformados. Sem nenhum dos dois
+// (uso original, mantido pelos testes pré-existentes): nenhum header de
+// assinatura é enviado, exatamente como o Libredesk faria sem secret configurado.
+function postReply(payload, { secret, signature } = {}) {
+  const body = JSON.stringify(payload);
+  const headers = { 'Content-Type': 'application/json' };
+  if (secret) headers['X-Libredesk-Signature'] = hmacSignature(body, secret);
+  else if (signature !== undefined) headers['X-Libredesk-Signature'] = signature;
+  return fetch(`${server.baseUrl}/webhook/libredesk`, { method: 'POST', headers, body });
 }
 
 // Troca temporariamente o sendMessage do conector `channelType` por `impl` e
@@ -163,4 +194,80 @@ test('roteia pelo canal do mapeamento — Mercado Livre não passa pelo conector
   assert.equal(mlCalls[0].mapping.channel_type, 'mercadolivre');
   assert.equal(mlCalls[0].externalId, 'pack-42');
   assert.equal(mlCalls[0].content, 'Já enviamos seu pedido!');
+});
+
+// A partir daqui: validação de assinatura HMAC-SHA256 (X-Libredesk-Signature),
+// só ativa quando WEBHOOK_SECRET está configurado — ver isValidSignature em
+// src/webhook/libredesk.js e docs.libredesk.io/configuration/webhooks. Os
+// testes acima já cobrem o padrão atual (sem secret = sem checagem, request
+// sempre processada); os de baixo cobrem o que muda quando o secret existe.
+
+test('com WEBHOOK_SECRET configurado, aceita e processa requisição com assinatura válida', async () => {
+  const calls = [];
+  await withWebhookSecret(TEST_WEBHOOK_SECRET, async () => {
+    await withMockConnectorSend('whatsapp', async (mapping, externalId, content) => {
+      calls.push({ mapping, externalId, content });
+    }, async () => {
+      const res = await postReply({
+        conversation_id: LIBREDESK_CONVERSATION_ID,
+        content: 'Resposta com assinatura batendo',
+        message_type: 'outgoing',
+      }, { secret: TEST_WEBHOOK_SECRET });
+      assert.equal(res.status, 200);
+      await waitFor(() => calls.length > 0);
+    });
+  });
+
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].content, 'Resposta com assinatura batendo');
+});
+
+test('com WEBHOOK_SECRET configurado, rejeita com 401 quando o segredo usado pra assinar não bate (adulteração/dessincronia)', async () => {
+  const calls = [];
+  await withWebhookSecret(TEST_WEBHOOK_SECRET, async () => {
+    await withMockConnectorSend('whatsapp', async (...args) => { calls.push(args); }, async () => {
+      const res = await postReply({
+        conversation_id: LIBREDESK_CONVERSATION_ID,
+        content: 'Assinada com outro segredo',
+        message_type: 'outgoing',
+      }, { secret: 'segredo-diferente-do-configurado' });
+      assert.equal(res.status, 401);
+    });
+  });
+
+  assert.equal(calls.length, 0);
+});
+
+test('com WEBHOOK_SECRET configurado, rejeita com 401 quando o header de assinatura está ausente', async () => {
+  const calls = [];
+  await withWebhookSecret(TEST_WEBHOOK_SECRET, async () => {
+    await withMockConnectorSend('whatsapp', async (...args) => { calls.push(args); }, async () => {
+      const res = await postReply({
+        conversation_id: LIBREDESK_CONVERSATION_ID,
+        content: 'Sem header X-Libredesk-Signature',
+        message_type: 'outgoing',
+      });
+      assert.equal(res.status, 401);
+    });
+  });
+
+  assert.equal(calls.length, 0);
+});
+
+test('com WEBHOOK_SECRET configurado, rejeita com 401 (sem derrubar o processo) quando o header tem formato inesperado', async () => {
+  const calls = [];
+  await withWebhookSecret(TEST_WEBHOOK_SECRET, async () => {
+    await withMockConnectorSend('whatsapp', async (...args) => { calls.push(args); }, async () => {
+      // Tamanho diferente do esperado ("sha256=" + 64 hex) — exercita o guard
+      // que evita o RangeError do crypto.timingSafeEqual com buffers desiguais.
+      const res = await postReply({
+        conversation_id: LIBREDESK_CONVERSATION_ID,
+        content: 'Header de assinatura mal formado',
+        message_type: 'outgoing',
+      }, { signature: 'isso-não-é-um-sha256=valido' });
+      assert.equal(res.status, 401);
+    });
+  });
+
+  assert.equal(calls.length, 0);
 });

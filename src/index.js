@@ -7,7 +7,13 @@ const evolutionWebhook = require('./webhook/evolution');
 const libredeskWebhook = require('./webhook/libredesk');
 
 const app = express();
-app.use(express.json());
+// `verify` guarda o corpo bruto em req.rawBody — necessário pro webhook do
+// Libredesk validar a assinatura HMAC, que é calculada sobre os bytes
+// originais (re-serializar req.body via JSON.stringify pode gerar uma
+// string diferente byte a byte e quebrar a verificação).
+app.use(express.json({
+  verify: (req, _res, buf) => { req.rawBody = buf; },
+}));
 
 app.use('/webhook/evolution', evolutionWebhook);
 app.use('/webhook/libredesk', libredeskWebhook);

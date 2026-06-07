@@ -10,7 +10,11 @@ const express = require('express');
 // do Express (não só chamar a função do handler isolada).
 async function startRouterServer(mountPath, router) {
   const app = express();
-  app.use(express.json());
+  // Mesma config de index.js — o webhook do Libredesk precisa de req.rawBody
+  // pra validar a assinatura HMAC (calculada sobre os bytes originais).
+  app.use(express.json({
+    verify: (req, _res, buf) => { req.rawBody = buf; },
+  }));
   app.use(mountPath, router);
   const server = http.createServer(app);
   await new Promise((resolve) => server.listen(0, resolve));
