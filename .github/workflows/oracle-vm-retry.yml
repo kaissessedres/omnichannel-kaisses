@@ -51,6 +51,12 @@ jobs:
       - name: Tentar criar o VM
         if: steps.check.outputs.exists == 'false'
         id: launch
+        env:
+          # Sem isso, o OCI CLI injeta um aviso sobre o formato da chave no
+          # stdout — ele se mistura ao $OUTPUT e pode mascarar o match dos
+          # padrões abaixo (já aconteceu: run 27103716695 caiu no `else` por
+          # causa do aviso emendado na resposta de erro real).
+          SUPPRESS_LABEL_WARNING: 'True'
         run: |
           set +e
           OUTPUT=$(oci compute instance launch \
@@ -75,6 +81,9 @@ jobs:
           elif echo "$OUTPUT" | grep -qi "TooManyRequests\|Too many requests"; then
             echo "status=rate_limited" >> "$GITHUB_OUTPUT"
             echo "Rate limit da Oracle (429) — provavelmente colidiu com o loop local. Tenta de novo no próximo agendamento."
+          elif echo "$OUTPUT" | grep -qi "connection.*timed out\|RequestException\|Connection aborted\|ServiceError"; then
+            echo "status=transient_error" >> "$GITHUB_OUTPUT"
+            echo "Falha transitória de rede/serviço ao falar com a Oracle — tenta de novo no próximo agendamento."
           else
             echo "status=error" >> "$GITHUB_OUTPUT"
             echo "::error::Erro inesperado: $OUTPUT"
