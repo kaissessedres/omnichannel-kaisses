@@ -6,7 +6,7 @@ name: Tentar criar VM Oracle (megachat-vm)
 
 on:
   schedule:
-    - cron: '*/15 * * * *'
+    - cron: '*/5 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -71,7 +71,10 @@ jobs:
             echo "🎉 VM criado: $OUTPUT"
           elif echo "$OUTPUT" | grep -qi "Out of host capacity"; then
             echo "status=no_capacity" >> "$GITHUB_OUTPUT"
-            echo "Sem capacidade nesta tentativa — o agendamento tenta de novo em 15min."
+            echo "Sem capacidade nesta tentativa — o agendamento tenta de novo em breve."
+          elif echo "$OUTPUT" | grep -qi "TooManyRequests\|Too many requests"; then
+            echo "status=rate_limited" >> "$GITHUB_OUTPUT"
+            echo "Rate limit da Oracle (429) — provavelmente colidiu com o loop local. Tenta de novo no próximo agendamento."
           else
             echo "status=error" >> "$GITHUB_OUTPUT"
             echo "::error::Erro inesperado: $OUTPUT"
