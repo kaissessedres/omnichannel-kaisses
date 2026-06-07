@@ -2,10 +2,12 @@
 // Auth: OAuth 2.0 — token de longa duração (60 dias, renovação manual)
 // Polling: GET /me/conversations a cada 30s
 
+const { getCredentials } = require('../db/crypto');
+
 const GRAPH_URL = 'https://graph.facebook.com/v19.0';
 
 function getToken(channelAccount) {
-  const creds = JSON.parse(channelAccount.credentials || '{}');
+  const creds = getCredentials(channelAccount);
   return creds.access_token || process.env.INSTAGRAM_ACCESS_TOKEN;
 }
 

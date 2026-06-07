@@ -4,9 +4,10 @@
 // Polling: GET /messages/unread a cada 30s
 
 const Meli = require('mercadolibre');
+const { getCredentials } = require('../db/crypto');
 
 function getClient(channelAccount) {
-  const creds = JSON.parse(channelAccount.credentials || '{}');
+  const creds = getCredentials(channelAccount);
   return new Meli.Meli(
     process.env.ML_APP_ID,
     process.env.ML_APP_SECRET,
@@ -63,7 +64,7 @@ async function fetchNewMessages(channelAccount, lastMessageId) {
 
 async function sendMessage(channelAccount, conversationId, text) {
   const client = getClient(channelAccount);
-  const creds = JSON.parse(channelAccount.credentials || '{}');
+  const creds = getCredentials(channelAccount);
   return meliPost(client, `/messages/packs/${conversationId}/sellers/${creds.seller_id}`, {
     text: { plain: text },
   });

@@ -5,13 +5,18 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 process.env.INSTAGRAM_ACCESS_TOKEN = 'env-fallback-token';
+process.env.ENCRYPTION_KEY = 'a'.repeat(64);
 
 const instagram = require('../../src/connectors/instagram');
+const { encrypt } = require('../../src/db/crypto');
 const { withMockFetch } = require('../helpers');
 
 const GRAPH_URL = 'https://graph.facebook.com/v19.0';
-const accountWithToken = { credentials: '{"access_token":"page-token-abc"}' };
-const accountWithoutToken = { credentials: '{}' };
+// Em produção `credentials` chega cifrado (ver src/db/crypto.js) — os
+// conectores decifram antes de usar, então o teste precisa cifrar também
+// pra simular o dado real chegando do banco.
+const accountWithToken = { credentials: encrypt(JSON.stringify({ access_token: 'page-token-abc' })) };
+const accountWithoutToken = { credentials: null };
 
 test('init usa o token da conta quando presente e resolve em caso de sucesso', async () => {
   await withMockFetch(async (url) => {

@@ -118,7 +118,8 @@ omnichannel-kaisses/          # este repositório
 │   │   └── client.js         # wrapper da API REST do Libredesk
 │   ├── db/
 │   │   ├── schema.js         # criação das tabelas SQLite
-│   │   └── queries.js        # funções de acesso ao banco
+│   │   ├── queries.js        # funções de acesso ao banco
+│   │   └── crypto.js         # AES-256-GCM p/ ChannelAccount.credentials (ENCRYPTION_KEY)
 │   ├── webhook/
 │   │   ├── libredesk.js      # recebe replies do Libredesk
 │   │   └── evolution.js      # recebe mensagens do Evolution API
@@ -128,7 +129,8 @@ omnichannel-kaisses/          # este repositório
 │   ├── helpers.js            # mocks e servidor HTTP efêmero compartilhados
 │   ├── poller.test.js
 │   ├── db/
-│   │   └── queries.test.js
+│   │   ├── queries.test.js
+│   │   └── crypto.test.js
 │   ├── connectors/
 │   │   ├── whatsapp.test.js
 │   │   ├── instagram.test.js

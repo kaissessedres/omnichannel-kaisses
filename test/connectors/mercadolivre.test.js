@@ -10,11 +10,16 @@ const needle = require('needle');
 
 process.env.ML_APP_ID = 'app-id';
 process.env.ML_APP_SECRET = 'app-secret';
+process.env.ENCRYPTION_KEY = 'a'.repeat(64);
 
 const mercadolivre = require('../../src/connectors/mercadolivre');
+const { encrypt } = require('../../src/db/crypto');
 
+// Em produção `credentials` chega cifrado (ver src/db/crypto.js) — o
+// conector decifra antes de usar, então o teste precisa cifrar também
+// pra simular o dado real chegando do banco.
 const account = {
-  credentials: JSON.stringify({ access_token: 'TOKEN123', refresh_token: 'REFRESH456', seller_id: '999' }),
+  credentials: encrypt(JSON.stringify({ access_token: 'TOKEN123', refresh_token: 'REFRESH456', seller_id: '999' })),
 };
 
 // Substitui needle.get/needle.post durante `fn` e restaura no final.
