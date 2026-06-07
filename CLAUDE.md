@@ -219,7 +219,7 @@ preferimos evitar (ver `docs/SDD-megachat.md` seção 3.1 para mais contexto).
 - [ ] Fase 6 — Reply via WhatsApp
 - [ ] Fase 7 — Conector Mercado Livre
 - [ ] Fase 8 — Conector Instagram
-- [ ] Fase 9 — Frontend PWA (repo separado)
+- [ ] Fase 9 — Frontend PWA (pasta `web/` — monorepo; scaffold runnable já existe, ver `web/CLAUDE.md`)
 - [ ] Fase 10 — Conector Shopee
 - [ ] Fase 11 — Testes e produção (suíte unitária/integração do bridge já existe — `npm test`, ver `test/`; falta e2e + produção)
 
@@ -241,10 +241,20 @@ depende do VM:
   em `src/webhook/libredesk.js`, com `WEBHOOK_SECRET`. Ver SDD §6.1.
 - **Falta (depende do VM):** o fluxo OAuth de ponta que obtém o primeiro token
   (troca do `code` via redirect URI) — Fases 7/8/10.
+- **PWA (Fase 9) em monorepo:** scaffold runnable em `web/` (Vite + React +
+  Tailwind + vite-plugin-pwa) — `npm run build` passa. Cliente da API do
+  Libredesk pronto (endpoints a validar). Deploy no Vercel com Root Directory =
+  `web/`. Ver `web/CLAUDE.md`.
 
 ---
 
-## Repositório relacionado
+## Frontend PWA — no mesmo repo (monorepo)
 
-`megachat-pwa` — frontend mobile React/Vite no Vercel.
-Consome a API REST do Libredesk diretamente (não passa pelo bridge).
+Decidimos manter o PWA **neste repositório**, na pasta `web/` (e não num repo
+separado). Frontend mobile React/Vite, publicado no Vercel com Root Directory =
+`web/`. Consome a API REST do Libredesk diretamente (não passa pelo bridge).
+Instruções vivas em `web/CLAUDE.md`; design original em `docs/CLAUDE-pwa.md`.
+
+O bridge (raiz do repo) e o PWA (`web/`) têm deploys independentes: o bridge vai
+pro Oracle via Docker; o `web/` vai pro Vercel. O `Dockerfile` do bridge só copia
+`src/` e `package*.json`, então `web/` nunca entra na imagem do bridge.

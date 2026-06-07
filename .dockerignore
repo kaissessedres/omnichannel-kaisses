@@ -1,0 +1,14 @@
+# O bridge (imagem Docker) não precisa do frontend nem de artefatos locais.
+# O Dockerfile só copia package*.json e src/, mas excluir aqui acelera o
+# build context e evita vazar dados/segredos pra dentro do contexto.
+web/
+node_modules/
+data/
+test/
+.git/
+.github/
+docs/
+*.md
+.env
+.env.*
+!.env.example

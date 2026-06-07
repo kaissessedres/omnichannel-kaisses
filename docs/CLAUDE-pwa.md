@@ -1,7 +1,11 @@
 # CLAUDE.md — megachat-pwa
 
-> Este arquivo é lido automaticamente pelo Claude Code a cada sessão.
-> Mantê-lo atualizado é responsabilidade do desenvolvedor.
+> ℹ️ **Decisão atualizada:** o PWA passou a viver **neste mesmo repositório**, na
+> pasta `web/` (monorepo) — não num repo separado. As instruções vivas estão em
+> `web/CLAUDE.md`. Este documento permanece como **referência de design** (o
+> "porquê" das escolhas) e segue válido; só o local da implementação mudou.
+>
+> Onde se lê "este repo"/"megachat-pwa" abaixo, leia "a pasta `web/`".
 
 ---
 
