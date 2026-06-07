@@ -3,14 +3,9 @@
 
 const express = require('express');
 const { findMappingByLibredesk } = require('../db/queries');
-const whatsapp    = require('../connectors/whatsapp');
-const instagram   = require('../connectors/instagram');
-const mercadolivre = require('../connectors/mercadolivre');
-const shopee      = require('../connectors/shopee');
+const { ALL: CONNECTORS } = require('../connectors');
 
 const router = express.Router();
-
-const CONNECTORS = { whatsapp, instagram, mercadolivre, shopee };
 
 router.post('/', async (req, res) => {
   res.sendStatus(200);

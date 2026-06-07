@@ -54,6 +54,7 @@ WhatsApp | Instagram | Mercado Livre x2 | Shopee x2
 megachat-bridge/
 ├── src/
 │   ├── connectors/
+│   │   ├── index.js          # registro central (composition root) — ALL e POLLED
 │   │   ├── whatsapp.js       # cliente HTTP para Evolution API
 │   │   ├── instagram.js      # Meta Graph API (fetch nativo)
 │   │   ├── mercadolivre.js   # SDK oficial mercadolibre npm
@@ -119,16 +120,34 @@ Lojista responde no Libredesk
 
 ## 3. Especificação dos conectores
 
-### 3.1 Interface comum (todos os conectores implementam)
+### 3.1 Interface dos conectores — composition root + contratos segregados
+
+Todos os conectores são montados em `src/connectors/index.js`, o **composition
+root**: o único arquivo que importa os módulos individuais (`whatsapp.js`,
+`instagram.js`, ...). Dali saem dois registros já filtrados por papel:
 
 ```javascript
-// Cada conector exporta este contrato
+// src/connectors/index.js
+const ALL    = { whatsapp, instagram, mercadolivre, shopee }; // roteamento de sendMessage
+const POLLED = { instagram, mercadolivre };                   // ciclo de polling do poller.js
+```
+
+`poller.js` e `webhook/libredesk.js` dependem **só** desse índice — nunca dos
+módulos individuais. Isso evita ter duas listas de conectores que podem divergir
+quando um canal novo entrar (ex: Shopee saindo do P2).
+
+Por que dois registros em vez de uma interface única "que todos implementam"?
+Porque nem todo conector cumpre o mesmo papel — WhatsApp recebe mensagens via
+webhook do Evolution API, então `fetchNewMessages` nunca seria chamado nele.
+Implementar esse método só para "satisfazer o contrato" seria uma violação do
+princípio de Interface Segregation (forçar um módulo a depender de algo que não
+usa). Por isso o contrato é dividido em dois:
+
+```javascript
+// Contrato base — TODO conector implementa (registrado em ALL)
 {
   // Inicializa o conector (configura SDK, verifica token, etc.)
   async init(channelAccount),
-
-  // Busca mensagens novas desde lastMessageId (não usado no WhatsApp)
-  async fetchNewMessages(lastMessageId),
 
   // Envia resposta para uma conversa existente
   async sendMessage(externalConversationId, text),
@@ -136,7 +155,20 @@ Lojista responde no Libredesk
   // Retorna informações do contato pelo ID externo
   async getContact(externalContactId)
 }
+
+// Contrato de polling — só conectores orientados a polling implementam
+// de verdade, e só esses entram no registro POLLED
+{
+  // Busca mensagens novas desde lastMessageId
+  async fetchNewMessages(lastMessageId),
+}
 ```
+
+`whatsapp.js` por isso **não exporta** `fetchNewMessages` — não é um método
+"vazio para constar", é simplesmente um papel que esse conector não tem.
+`shopee.js` mantém o método (mesmo como placeholder) porque, quando for
+implementado na Fase 10, também será orientado a polling — basta adicioná-lo
+ao registro `POLLED` em `connectors/index.js`.
 
 ### 3.2 WhatsApp — via Evolution API
 - **Como funciona:** Evolution API roda como serviço separado e expõe REST API

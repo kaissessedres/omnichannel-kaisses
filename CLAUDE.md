@@ -109,6 +109,7 @@ diretamente. Confirmar configuração de CORS no Libredesk antes da fase 9.
 omnichannel-kaisses/          # este repositório
 ├── src/
 │   ├── connectors/
+│   │   ├── index.js          # registro central (composition root) — ALL e POLLED
 │   │   ├── whatsapp.js       # cliente HTTP para Evolution API
 │   │   ├── instagram.js      # Meta Graph API (fetch nativo)
 │   │   ├── mercadolivre.js   # SDK oficial mercadolibre npm
@@ -159,16 +160,32 @@ EVOLUTION_API_KEY, ML_APP_ID, ML_APP_SECRET, ENCRYPTION_KEY.
 
 ---
 
-## Interface que todos os conectores implementam
+## Interface dos conectores
+
+Todo conector é registrado em `src/connectors/index.js` (composition root —
+único lugar que importa os módulos individuais; poller e webhook dependem só
+desse índice). De lá saem dois agrupamentos, porque nem todo conector cumpre
+o mesmo papel:
 
 ```javascript
+// Contrato base — TODO conector implementa (registrado em ALL)
 {
-  async init(channelAccount),           // inicializa autenticação
-  async fetchNewMessages(lastMsgId),    // polling — não usado no WhatsApp
-  async sendMessage(convId, text),      // envia resposta
-  async getContact(contactId)           // info do contato
+  async init(channelAccount),     // inicializa autenticação
+  async sendMessage(convId, text),// envia resposta
+  async getContact(contactId)     // info do contato
+}
+
+// Contrato de polling — só quem é orientado a polling implementa
+// de verdade (registrado em POLLED: hoje instagram e mercadolivre)
+{
+  async fetchNewMessages(lastMsgId),  // busca mensagens novas desde o último ID
 }
 ```
+
+WhatsApp não implementa `fetchNewMessages` — recebe via webhook do Evolution
+API, então esse método nunca seria chamado nele. Forçar uma implementação vazia
+só para "cumprir a interface" é o tipo de violação de Interface Segregation que
+preferimos evitar (ver `docs/SDD-megachat.md` seção 3.1 para mais contexto).
 
 ---
 

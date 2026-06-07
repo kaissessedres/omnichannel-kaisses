@@ -22,11 +22,6 @@ async function init(channelAccount) {
   if (!found) throw new Error(`Instance "${channelAccount.evolution_instance_id}" not found in Evolution API`);
 }
 
-// WhatsApp não usa polling — mensagens chegam via webhook do Evolution API
-async function fetchNewMessages() {
-  return [];
-}
-
 async function sendMessage(channelAccount, phoneNumber, text) {
   const instance = channelAccount.evolution_instance_id;
   const res = await fetch(`${EVOLUTION_URL()}/message/sendText/${instance}`, {
@@ -50,4 +45,4 @@ async function getContact(channelAccount, phoneNumber) {
   return { name: data.name || phoneNumber, identifier: phoneNumber };
 }
 
-module.exports = { init, fetchNewMessages, sendMessage, getContact };
+module.exports = { init, sendMessage, getContact };

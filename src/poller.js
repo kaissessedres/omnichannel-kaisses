@@ -3,14 +3,11 @@
 
 const cron = require('node-cron');
 const { getActiveAccounts, getSyncState, upsertSyncState, findMapping, createMapping, updateLastSynced, markAccountError } = require('./db/queries');
-const libredesk    = require('./libredesk/client');
-const instagram    = require('./connectors/instagram');
-const mercadolivre = require('./connectors/mercadolivre');
-
-const POLLED_CHANNELS = { instagram, mercadolivre };
+const libredesk = require('./libredesk/client');
+const { POLLED } = require('./connectors');
 
 async function pollAccount(account) {
-  const connector = POLLED_CHANNELS[account.channel_type];
+  const connector = POLLED[account.channel_type];
   if (!connector) return;
 
   const state = getSyncState(account.id) || {};
