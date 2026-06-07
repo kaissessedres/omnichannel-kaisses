@@ -118,7 +118,7 @@ Body: { status: "resolved" }
 
 ⚠️ **Atenção:** estes endpoints são baseados no padrão Chatwoot e precisam ser
 validados contra a documentação real do Libredesk antes de implementar.
-Consultar: https://libredesk.io/docs ou o Swagger da instância Railway.
+Consultar: https://libredesk.io/docs ou o Swagger da instância (no VM Oracle Cloud).
 
 ---
 
@@ -143,7 +143,7 @@ Verificar/configurar isso na Fase 3 (deploy do Libredesk), antes de iniciar este
 
 Push na branch `main` → Vercel detecta Vite automaticamente → build e deploy.
 Variáveis de ambiente no dashboard Vercel:
-- `VITE_LIBREDESK_URL` — URL da instância Railway do Libredesk
+- `VITE_LIBREDESK_URL` — URL pública da instância do Libredesk (no VM Oracle Cloud)
 
 ---
 
@@ -158,6 +158,6 @@ Variáveis de ambiente no dashboard Vercel:
 
 ## Repositório relacionado
 
-`megachat-bridge` — bridge Node.js no Railway.
+`megachat-bridge` — bridge Node.js no Oracle Cloud (Docker Compose).
 Alimenta o Libredesk com mensagens dos canais externos.
 Este PWA não depende do bridge diretamente — só do Libredesk estar no ar.

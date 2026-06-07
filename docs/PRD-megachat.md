@@ -3,6 +3,7 @@
 **Autor:** a definir  
 **Status:** Em revisão  
 **Changelog:**
+- v0.4 — Hospedagem do backend migrada de Railway para Oracle Cloud Always Free (RNFs e escopo de deploy atualizados)
 - v0.3 — Adicionado frontend mobile PWA no Vercel; hospedagem definida como Railway (backend) + Vercel (frontend); ajustados RNFs, escopo e dependências
 - v0.2 — Substituído whatsapp-web.js por Evolution API; adicionado SDK oficial ML; atualizado riscos e dependências
 
@@ -77,7 +78,7 @@ uma operação de pessoa única.
 - Backend de conversas e mensagens
 - API REST consumida pelo frontend mobile
 - Gestão de status (aberto, resolvido)
-- Deploy self-hosted via Railway
+- Deploy self-hosted via Docker Compose no Oracle Cloud
 
 ### 5.4 Frontend Mobile PWA (desenvolvemos, hospedado no Vercel)
 
@@ -96,7 +97,7 @@ uma operação de pessoa única.
 |---|---|
 | Custo | Zero — Oracle Cloud Always Free (backend) + Vercel free tier (frontend) |
 | Mobile-first | Interface PWA otimizada para telas de 375px+; touch-friendly |
-| Disponibilidade | Backend Railway 24h; frontend Vercel estático — nunca dorme |
+| Disponibilidade | Backend Oracle Cloud 24h (VM sempre ligado); frontend Vercel estático — nunca dorme |
 | Latência de sync | Mensagens aparecem em até 60 segundos |
 | Segurança | Credenciais e tokens nunca expostos em logs ou no frontend |
 | Manutenibilidade | Código modular — um arquivo por canal no bridge |

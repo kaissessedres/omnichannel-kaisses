@@ -219,6 +219,21 @@ preferimos evitar (ver `docs/SDD-megachat.md` seção 3.1 para mais contexto).
 - [ ] Fase 10 — Conector Shopee
 - [ ] Fase 11 — Testes e produção (suíte unitária/integração do bridge já existe — `npm test`, ver `test/`; falta e2e + produção)
 
+### Trabalho transversal já feito (fora da ordem das fases)
+
+A Fase 3 depende do desenvolvedor provisionar o VM Oracle e hoje está travada por
+falta de capacidade ("Out of host capacity" — há workflow de retry em
+`.github/workflows/oracle-vm-retry.yml`). Enquanto isso, adiantamos o que não
+depende do VM:
+
+- **Suíte de testes:** `npm test` (node --test) — **71 testes**, cobrindo
+  conectores, db, poller e webhooks. Ver `test/`.
+- **Criptografia de `credentials`:** AES-256-GCM em `src/db/crypto.js`
+  (`ENCRYPTION_KEY`). Ver ERD e SDD §6.1. ⚠️ Falta o lado de *escrita* (salvar
+  tokens pós-OAuth — Fases 7/8/10): quem o construir deve chamar `encrypt()`.
+- **Validação de assinatura dos webhooks:** HMAC-SHA256 (`X-Libredesk-Signature`)
+  em `src/webhook/libredesk.js`, com `WEBHOOK_SECRET`. Ver SDD §6.1.
+
 ---
 
 ## Repositório relacionado

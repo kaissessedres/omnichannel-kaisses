@@ -1,6 +1,7 @@
 # SDD — Software Design Document: Megachat Bridge
-**Versão:** 0.3  
+**Versão:** 0.4  
 **Changelog:**
+- v0.4 — Hospedagem migrada de Railway para Oracle Cloud Always Free (refletido na stack e nos exemplos de env); nova seção 6.1 documentando a segurança implementada (criptografia AES-256-GCM de `credentials` + validação de assinatura HMAC-SHA256 dos webhooks); formato real do `ENCRYPTION_KEY` corrigido
 - v0.3 — Adicionado frontend mobile PWA (React/Vercel); arquitetura agora tem 4 serviços; seção 9 dedicada ao frontend; stack e deploy atualizados
 - v0.2 — Evolution API adicionado como serviço dedicado WhatsApp; SDK oficial ML; webhook Evolution API; 3 serviços Railway
 
@@ -203,17 +204,18 @@ ao registro `POLLED` em `connectors/index.js`.
 ## 4. Variáveis de ambiente (.env)
 
 ```
-# Libredesk
-LIBREDESK_URL=https://seu-libredesk.railway.app
+# Libredesk (em produção: URL interna da rede Docker — ver docker-compose.yml)
+LIBREDESK_URL=http://libredesk:9000
 LIBREDESK_API_KEY=xxxx
 
-# Evolution API (WhatsApp)
-EVOLUTION_API_URL=https://seu-evolution.railway.app
+# Evolution API (WhatsApp) — também URL interna da rede Docker em produção
+EVOLUTION_API_URL=http://evolution:8080
 EVOLUTION_API_KEY=xxxx
 EVOLUTION_WA_INSTANCE=megachat-wa-1   # nome da instância no Evolution API
 
-# Encryption (para tokens ML, Instagram, Shopee no banco)
-ENCRYPTION_KEY=32-char-random-string
+# Encryption (cifra os tokens de ML, Instagram, Shopee no banco — AES-256-GCM)
+# 32 bytes em hex (64 caracteres). Gere com: openssl rand -hex 32
+ENCRYPTION_KEY=
 
 # Mercado Livre
 ML_APP_ID=xxxx
@@ -234,27 +236,33 @@ SHOPEE_ACCOUNT_2_TOKEN=xxxx
 
 # Webhook
 WEBHOOK_PORT=3000
-WEBHOOK_SECRET=xxxx
+# Opcional, mas recomendado em produção. A MESMA string vai aqui e no painel do
+# Libredesk (Admin → Integrations → Webhooks); ver seção 6.1.
+WEBHOOK_SECRET=
 ```
 
 ---
 
 ## 5. Stack tecnológica
 
+> **Hospedagem:** todos os serviços de backend rodam juntos via Docker Compose num
+> único VM Oracle Cloud Always Free (A1 Flex). O frontend é o único fora do VM,
+> hospedado no Vercel. (Migração de Railway → Oracle: ver `CLAUDE.md` e o changelog v0.4.)
+
 | Camada | Tecnologia | Hospedagem | Justificativa |
 |---|---|---|---|
-| Runtime backend | Node.js 20 LTS | Railway | Async nativo, ecossistema rico |
-| Framework web | Express.js | Railway | Leve, para receber webhooks |
-| Banco de dados bridge | SQLite (better-sqlite3) | Railway (volume persistente) | Sem servidor separado, suficiente para 1 cliente |
-| WhatsApp | Evolution API | Railway (serviço próprio) | Gerencia sessão, QR e reconexão automaticamente |
-| ML | mercadolibre npm SDK (oficial) | Railway | Mantido pelo próprio ML; absorve mudanças de API |
-| Instagram | fetch nativo (Graph API) | Railway | REST puro, sem dependência extra |
-| Shopee | fetch nativo (Open Platform) | Railway | Sem SDK oficial disponível |
-| Scheduler | node-cron | Railway | Polling a cada 30s para Instagram, ML, Shopee |
+| Runtime backend | Node.js 20 LTS | Oracle Cloud (Docker) | Async nativo, ecossistema rico |
+| Framework web | Express.js | Oracle Cloud (Docker) | Leve, para receber webhooks |
+| Banco de dados bridge | SQLite (better-sqlite3) | Oracle Cloud (volume Docker) | Sem servidor separado, suficiente para 1 cliente |
+| WhatsApp | Evolution API | Oracle Cloud (serviço Docker) | Gerencia sessão, QR e reconexão automaticamente |
+| ML | mercadolibre npm SDK (oficial) | Oracle Cloud (Docker) | Mantido pelo próprio ML; absorve mudanças de API |
+| Instagram | fetch nativo (Graph API) | Oracle Cloud (Docker) | REST puro, sem dependência extra |
+| Shopee | fetch nativo (Open Platform) | Oracle Cloud (Docker) | Sem SDK oficial disponível |
+| Scheduler | node-cron | Oracle Cloud (Docker) | Polling a cada 30s para Instagram, ML, Shopee |
 | Frontend mobile | React 18 + Vite | Vercel | Build estático, nunca dorme, deploy automático via GitHub |
 | Estilo mobile | Tailwind CSS | Vercel | Mobile-first utility classes, sem configuração de build extra |
 | PWA | vite-plugin-pwa | Vercel | manifest.json + service worker gerados automaticamente |
-| Backend helpdesk | Libredesk | Railway | PostgreSQL + Redis inclusos no template oficial |
+| Backend helpdesk | Libredesk | Oracle Cloud (Docker) | PostgreSQL + Redis inclusos no template oficial |
 
 ---
 
@@ -266,6 +274,41 @@ WEBHOOK_SECRET=xxxx
 - **Token Instagram expirado:** logar alerta 7 dias antes dos 60 dias; renovação manual por enquanto
 - **Evolution API indisponível:** bridge loga erro e tenta de novo no próximo webhook; mensagens não perdidas pois ficam no WhatsApp
 - **WhatsApp desconectado:** Evolution API tenta reconectar automaticamente; se falhar, gera novo QR code
+
+---
+
+## 6.1 Segurança (implementado)
+
+Dois mecanismos já estão no código (com testes em `test/`) — o restante da
+superfície de segurança depende das fases de deploy (rede Docker interna, TLS no
+nginx) e está fora do escopo do bridge.
+
+### Criptografia de credenciais em repouso
+- **O quê:** o campo `ChannelAccount.credentials` (tokens OAuth de ML, Instagram,
+  Shopee) é cifrado com **AES-256-GCM** — cifra autenticada, então adulteração do
+  valor no banco é detectada na hora de decifrar (via `authTag`).
+- **Onde:** `src/db/crypto.js` (`encrypt` / `decrypt` / `getCredentials`).
+- **Chave:** env var `ENCRYPTION_KEY`, 32 bytes em hex (`openssl rand -hex 32`).
+- **Formato gravado:** `iv:authTag:ciphertext` (hex, numa string só — cabe na
+  coluna TEXT, sem mudar schema).
+- **Pendência conhecida:** o lado de *escrita* (salvar tokens após o OAuth) é das
+  Fases 7/8/10 e ainda não existe — quem o construir precisa chamar `encrypt()`
+  antes de gravar (ver aviso em `src/db/crypto.js` e no ERD).
+
+### Validação de assinatura dos webhooks do Libredesk
+- **O quê:** quando o reply do lojista chega em `POST /webhook/libredesk`, o bridge
+  confere a assinatura **HMAC-SHA256** que o Libredesk envia no header
+  `X-Libredesk-Signature` (formato `sha256=<hex>`), calculada sobre o **corpo bruto**
+  da requisição. Comparação em tempo constante (`crypto.timingSafeEqual`).
+- **Onde:** `src/webhook/libredesk.js` (`isValidSignature`); o corpo bruto é
+  capturado em `req.rawBody` via `express.json({ verify })` em `src/index.js`.
+- **Segredo:** env var `WEBHOOK_SECRET`, espelhada no painel do Libredesk
+  (Admin → Integrations → Webhooks). Referência:
+  https://docs.libredesk.io/configuration/webhooks
+- **Postura:** *fail-open sem configuração, fail-closed se mal configurado* — sem
+  `WEBHOOK_SECRET` definido o webhook segue processando (apenas loga um aviso, para
+  não quebrar ambientes ainda não configurados); com o segredo definido, requisição
+  sem assinatura ou com assinatura inválida é rejeitada com **HTTP 401**.
 
 ---
 

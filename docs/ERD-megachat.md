@@ -1,6 +1,7 @@
 # ERD — Megachat Bridge Service
-**Versão:** 0.3  
+**Versão:** 0.4  
 **Changelog:**
+- v0.4 — Criptografia de `credentials` saiu do papel: implementada com AES-256-GCM (`src/db/crypto.js`); nota de design atualizada de "usaremos" para o mecanismo real
 - v0.3 — Adicionada nota sobre frontend mobile não requerer entidades novas; campo `evolution_instance_id` documentado com clareza
 - v0.2 — Adicionado campo evolution_instance_id em ChannelAccount; WhatsApp não armazena sessão localmente
 
@@ -23,7 +24,7 @@ Representa uma conta conectada em um canal externo.
 | id | INTEGER PK | Identificador único |
 | channel_type | TEXT | 'whatsapp' \| 'instagram' \| 'mercadolivre' \| 'shopee' |
 | account_label | TEXT | Nome amigável ex: "ML Conta Principal" |
-| credentials | TEXT | JSON criptografado com tokens/sessão (não usado para WhatsApp) |
+| credentials | TEXT | JSON cifrado (AES-256-GCM) com tokens — formato `iv:authTag:ciphertext` em hex; não usado para WhatsApp |
 | evolution_instance_id | TEXT | Nullable — ID da instância no Evolution API (só WhatsApp) |
 | libredesk_inbox_id | INTEGER | ID do inbox correspondente no Libredesk |
 | status | TEXT | 'active' \| 'disconnected' \| 'error' |
@@ -90,8 +91,19 @@ credencial do WhatsApp passa pelo bridge.
 
 **Por que criptografar credentials?**
 Tokens OAuth do ML, Instagram e credenciais da Shopee não podem ficar em texto
-plano em banco. Usaremos uma chave de ambiente (env var) para criptografia AES.
-WhatsApp não precisa disso pois sua sessão fica no Evolution API.
+plano em banco. **Implementado** em `src/db/crypto.js` com AES-256-GCM — cifra
+*autenticada*: o `authTag` detecta qualquer adulteração do valor armazenado. A
+chave vem da env var `ENCRYPTION_KEY` (32 bytes = 64 caracteres hex; gere com
+`openssl rand -hex 32`) e o valor é gravado na coluna `credentials` no formato
+`iv:authTag:ciphertext` (hex), que cabe na coluna TEXT existente — sem mudança de
+schema. Os conectores nunca tocam o campo cru: leem via `getCredentials()`, que
+decifra e faz o parse do JSON. WhatsApp não precisa disso pois sua sessão fica no
+Evolution API (campo fica nulo).
+
+> ⚠️ O lado de **escrita** (persistir os tokens depois do fluxo OAuth — Fases
+> 7/8/10) ainda não existe. Quem o construir DEVE chamar
+> `encrypt(JSON.stringify(creds))` antes do INSERT/UPDATE: `getCredentials()`
+> rejeita valores em texto plano como "formato inesperado", sem fallback.
 
 **SQLite é suficiente?**
 Sim. Com um único usuário e baixo volume, SQLite é mais simples que PostgreSQL e não
