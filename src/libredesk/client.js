@@ -1,6 +1,6 @@
 // Wrapper da API REST do Libredesk
 // ⚠️  Os endpoints abaixo seguem o padrão da documentação do Libredesk.
-//     Validar contra o Swagger da instância Railway antes da Fase 3.
+//     Validar contra o Swagger da instância no Oracle Cloud antes da Fase 3.
 
 const BASE       = () => process.env.LIBREDESK_URL;
 const KEY        = () => process.env.LIBREDESK_API_KEY;

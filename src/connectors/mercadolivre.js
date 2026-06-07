@@ -26,7 +26,11 @@ function meliGet(client, path, params = {}) {
 
 function meliPost(client, path, body) {
   return new Promise((resolve, reject) => {
-    client.post(path, {}, body, (err, res) => {
+    // Assinatura do SDK é (path, body, params, callback) — body vai pro
+    // corpo da requisição, params vira query string (?access_token=...).
+    // Trocar a ordem faz o texto da mensagem virar "[object Object]" na
+    // query string e o corpo sair vazio (bug pego pelos testes do conector).
+    client.post(path, body, {}, (err, res) => {
       if (err) return reject(new Error(`ML POST ${path} failed: ${err}`));
       resolve(typeof res === 'string' ? JSON.parse(res) : res);
     });

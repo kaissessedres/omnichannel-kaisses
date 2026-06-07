@@ -124,6 +124,18 @@ omnichannel-kaisses/          # este repositório
 │   │   └── evolution.js      # recebe mensagens do Evolution API
 │   ├── poller.js             # orquestra polling (Instagram, ML)
 │   └── index.js              # entry point
+├── test/                     # suíte automatizada — `npm test` (node --test)
+│   ├── helpers.js            # mocks e servidor HTTP efêmero compartilhados
+│   ├── db/
+│   │   └── queries.test.js
+│   ├── connectors/
+│   │   ├── whatsapp.test.js
+│   │   ├── instagram.test.js
+│   │   ├── mercadolivre.test.js
+│   │   └── shopee.test.js
+│   └── webhook/
+│       ├── evolution.test.js
+│       └── libredesk.test.js
 ├── docs/
 │   ├── PRD-megachat.md
 │   ├── ERD-megachat.md
@@ -202,7 +214,7 @@ preferimos evitar (ver `docs/SDD-megachat.md` seção 3.1 para mais contexto).
 - [ ] Fase 8 — Conector Instagram
 - [ ] Fase 9 — Frontend PWA (repo separado)
 - [ ] Fase 10 — Conector Shopee
-- [ ] Fase 11 — Testes e produção
+- [ ] Fase 11 — Testes e produção (suíte unitária/integração do bridge já existe — `npm test`, ver `test/`; falta e2e + produção)
 
 ---
 
