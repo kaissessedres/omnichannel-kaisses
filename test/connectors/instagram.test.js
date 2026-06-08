@@ -6,9 +6,14 @@ const assert = require('node:assert/strict');
 
 process.env.INSTAGRAM_ACCESS_TOKEN = 'env-fallback-token';
 process.env.ENCRYPTION_KEY = 'a'.repeat(64);
+process.env.DB_PATH = ':memory:'; // p/ os testes de refresh, que persistem via saveCredentials
+process.env.META_APP_ID = 'meta-app-id';       // habilita o refresh proativo (só dispara p/ contas com id)
+process.env.META_APP_SECRET = 'meta-app-secret';
 
 const instagram = require('../../src/connectors/instagram');
-const { encrypt } = require('../../src/db/crypto');
+const { encrypt, getCredentials } = require('../../src/db/crypto');
+const { initDb } = require('../../src/db/schema');
+const queries = require('../../src/db/queries');
 const { withMockFetch } = require('../helpers');
 
 const GRAPH_URL = 'https://graph.facebook.com/v19.0';
@@ -146,5 +151,87 @@ test('getContact cai para o ID quando a Graph API falha ou não traz nome', asyn
   await withMockFetch(async () => ({ ok: false, status: 404 }), async () => {
     const contact = await instagram.getContact(accountWithToken, 'u1');
     assert.deepEqual(contact, { name: 'u1', identifier: 'u1' });
+  });
+});
+
+// ── Renovação proativa do token de longa duração (60 dias) ──
+// Diferente do ML, não há refresh_token separado: troca-se o token válido por
+// um novo (grant fb_exchange_token) ANTES de expirar. Precisa de conta com id
+// (pra persistir) e META_APP_ID/SECRET (setados no topo do arquivo).
+
+test('fetchNewMessages renova proativamente o token perto de expirar e persiste o novo', async () => {
+  initDb();
+  const { lastInsertRowid: id } = queries.createAccount({
+    channelType: 'instagram',
+    accountLabel: 'IG perto de expirar',
+    credentials: { access_token: 'OLD_LL', expires_at: Date.now() + 2 * 24 * 60 * 60 * 1000 }, // 2 dias (< folga de 7)
+    libredeskInboxId: 4,
+  });
+  const account = queries.getAccountById(id);
+
+  let oauthCalled = false;
+  let convToken = null;
+  await withMockFetch(async (url) => {
+    if (url.includes('/oauth/access_token')) {
+      oauthCalled = true;
+      assert.match(url, /grant_type=fb_exchange_token/);
+      assert.match(url, /fb_exchange_token=OLD_LL/);
+      return { ok: true, json: async () => ({ access_token: 'NEW_LL', token_type: 'bearer', expires_in: 5184000 }) };
+    }
+    convToken = (url.match(/access_token=([^&]+)/) || [])[1];
+    return { ok: true, json: async () => ({ data: [] }) };
+  }, async () => {
+    await instagram.fetchNewMessages(account, null);
+  });
+
+  assert.ok(oauthCalled, 'deveria ter renovado o token');
+  assert.equal(convToken, 'NEW_LL', 'a busca de conversas deve usar o token NOVO');
+
+  const persisted = getCredentials(queries.getAccountById(id));
+  assert.equal(persisted.access_token, 'NEW_LL');
+  assert.ok(persisted.expires_at > Date.now() + 50 * 24 * 60 * 60 * 1000, 'expires_at deve refletir ~60 dias');
+});
+
+test('fetchNewMessages NÃO renova quando o token ainda está longe de expirar', async () => {
+  initDb();
+  const { lastInsertRowid: id } = queries.createAccount({
+    channelType: 'instagram',
+    accountLabel: 'IG token fresco',
+    credentials: { access_token: 'FRESH_LL', expires_at: Date.now() + 30 * 24 * 60 * 60 * 1000 }, // 30 dias
+    libredeskInboxId: 4,
+  });
+  const account = queries.getAccountById(id);
+
+  let calls = 0;
+  await withMockFetch(async (url) => {
+    calls += 1;
+    assert.doesNotMatch(url, /\/oauth\/access_token/, 'não deveria renovar com token fresco');
+    assert.match(url, /access_token=FRESH_LL/);
+    return { ok: true, json: async () => ({ data: [] }) };
+  }, async () => {
+    await instagram.fetchNewMessages(account, null);
+  });
+
+  assert.equal(calls, 1, 'apenas a busca de conversas, sem chamada de refresh');
+  assert.equal(getCredentials(queries.getAccountById(id)).access_token, 'FRESH_LL');
+});
+
+test('refreshLongLivedToken persiste o token novo + expires_at; propaga erro se a Graph API recusar', async () => {
+  initDb();
+  const { lastInsertRowid: id } = queries.createAccount({
+    channelType: 'instagram',
+    accountLabel: 'IG refresh direto',
+    credentials: { access_token: 'LL_1' },
+    libredeskInboxId: 4,
+  });
+
+  await withMockFetch(async () => ({ ok: true, json: async () => ({ access_token: 'LL_2', expires_in: 5184000 }) }), async () => {
+    const updated = await instagram.refreshLongLivedToken(queries.getAccountById(id));
+    assert.equal(updated.access_token, 'LL_2');
+  });
+  assert.equal(getCredentials(queries.getAccountById(id)).access_token, 'LL_2');
+
+  await withMockFetch(async () => ({ ok: false, status: 400, text: async () => 'invalid token' }), async () => {
+    await assert.rejects(() => instagram.refreshLongLivedToken(queries.getAccountById(id)), /Instagram refresh de token falhou: 400/);
   });
 });

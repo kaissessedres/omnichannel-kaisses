@@ -232,13 +232,18 @@ falta de capacidade ("Out of host capacity" — há workflow de retry em
 mesmo stack Docker Compose no desktop do dev (sem mudança de código) — ver
 `docs/DEPLOY-desktop.md`. Enquanto isso, adiantamos o que não depende do VM:
 
-- **Suíte de testes:** `npm test` (node --test) — **78 testes**, cobrindo
+- **Suíte de testes:** `npm test` (node --test) — **81 testes**, cobrindo
   conectores, db, poller e webhooks. Ver `test/`.
+- **CI:** `.github/workflows/ci.yml` roda a suíte do bridge + o build do `web/`
+  a cada push na main e em todo PR.
 - **Criptografia de `credentials`:** AES-256-GCM em `src/db/crypto.js`
   (`ENCRYPTION_KEY`). Lado de escrita pronto: `createAccount`/`saveCredentials`
   em `src/db/queries.js` cifram via `setCredentials`. Ver ERD e SDD §6.1.
 - **Renovação de token do ML:** o conector detecta o 401 de token expirado,
   renova e persiste o `refresh_token` rotacionado (o SDK não faz isso sozinho).
+- **Renovação de token do Instagram:** token de longa duração (~60d) sem
+  refresh_token separado — o conector renova *proativamente* (grant
+  `fb_exchange_token`) antes de expirar e persiste o novo + `expires_at`.
 - **Validação de assinatura dos webhooks:** HMAC-SHA256 (`X-Libredesk-Signature`)
   em `src/webhook/libredesk.js`, com `WEBHOOK_SECRET`. Ver SDD §6.1.
 - **Falta (depende do VM):** o fluxo OAuth de ponta que obtém o primeiro token
