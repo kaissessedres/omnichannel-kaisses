@@ -148,7 +148,8 @@ omnichannel-kaisses/          # este repositório
 │   ├── ERD-megachat.md
 │   ├── SDD-megachat.md
 │   ├── DEPLOY-oracle.md      # guia passo a passo do deploy no Oracle Cloud
-│   └── CLAUDE-pwa.md         # referência para o repo megachat-pwa
+│   ├── DEPLOY-desktop.md     # alternativa: rodar no desktop (contornar a fila do Oracle)
+│   └── CLAUDE-pwa.md         # referência de design do PWA (hoje em web/)
 ├── nginx/
 │   └── nginx.conf            # reverse proxy (Libredesk na porta 80)
 ├── data/                     # banco SQLite (ignorado pelo git)
@@ -227,8 +228,9 @@ preferimos evitar (ver `docs/SDD-megachat.md` seção 3.1 para mais contexto).
 
 A Fase 3 depende do desenvolvedor provisionar o VM Oracle e hoje está travada por
 falta de capacidade ("Out of host capacity" — há workflow de retry em
-`.github/workflows/oracle-vm-retry.yml`). Enquanto isso, adiantamos o que não
-depende do VM:
+`.github/workflows/oracle-vm-retry.yml`). **Alternativa para destravar:** rodar o
+mesmo stack Docker Compose no desktop do dev (sem mudança de código) — ver
+`docs/DEPLOY-desktop.md`. Enquanto isso, adiantamos o que não depende do VM:
 
 - **Suíte de testes:** `npm test` (node --test) — **78 testes**, cobrindo
   conectores, db, poller e webhooks. Ver `test/`.
