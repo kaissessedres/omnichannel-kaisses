@@ -59,6 +59,12 @@ export function listConversations(status = 'open') {
   return request(`${accountPath('/conversations')}?status=${encodeURIComponent(status)}`);
 }
 
+// Testa a conexão com uma chamada leve autenticada — usado pela tela de login
+// para avisar cedo se a URL/chave estão erradas (best-effort; lança em falha).
+export async function verifyConnection() {
+  await listConversations('open');
+}
+
 // Mensagens de uma conversa (thread)
 export function listMessages(conversationId) {
   return request(accountPath(`/conversations/${conversationId}/messages`));

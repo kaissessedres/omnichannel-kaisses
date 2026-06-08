@@ -1,7 +1,7 @@
 import { beforeEach, afterEach, describe, it, expect, vi } from 'vitest';
 import {
   getAuth, saveAuth, clearAuth,
-  listConversations, listMessages, sendReply, resolveConversation,
+  listConversations, listMessages, sendReply, resolveConversation, verifyConnection,
 } from './libredesk.js';
 
 const AUTH = { url: 'https://ld.example', apiKey: 'secret', accountId: '9' };
@@ -92,5 +92,17 @@ describe('chamadas à API', () => {
     saveAuth(AUTH);
     mockFetch(null, { ok: false, status: 500 });
     await expect(listConversations()).rejects.toThrow(/500/);
+  });
+
+  it('verifyConnection resolve quando a chamada de teste responde ok', async () => {
+    saveAuth(AUTH);
+    mockFetch({ data: [] });
+    await expect(verifyConnection()).resolves.toBeUndefined();
+  });
+
+  it('verifyConnection rejeita quando a conexão falha', async () => {
+    saveAuth(AUTH);
+    mockFetch(null, { ok: false, status: 401 });
+    await expect(verifyConnection()).rejects.toThrow(/401/);
   });
 });

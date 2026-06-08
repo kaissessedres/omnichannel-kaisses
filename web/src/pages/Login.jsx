@@ -1,38 +1,126 @@
 import { useState } from 'react';
-import { saveAuth } from '../api/libredesk.js';
+import { saveAuth, verifyConnection } from '../api/libredesk.js';
 
-// Primeira abertura: pede URL + API key + accountId do Libredesk e guarda no
-// localStorage (ver "Autenticação" em docs/CLAUDE-pwa.md). VITE_LIBREDESK_URL,
-// se definida no build, só pré-preenche o campo.
+// Primeira abertura: pede o endereço do Libredesk + a chave de acesso (API key)
+// e guarda no localStorage (ver "Autenticação" em docs/CLAUDE-pwa.md). Ao entrar,
+// testa a conexão pra avisar cedo se algo está errado; se o backend ainda não
+// estiver no ar, dá pra "entrar mesmo assim". VITE_LIBREDESK_URL pré-preenche.
 export default function Login({ onAuthed }) {
   const [url, setUrl] = useState(import.meta.env.VITE_LIBREDESK_URL || '');
   const [apiKey, setApiKey] = useState('');
   const [accountId, setAccountId] = useState('1');
+  const [showKey, setShowKey] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [canForce, setCanForce] = useState(false);
 
-  function submit(e) {
+  async function submit(e) {
     e.preventDefault();
+    setError(null);
+    setCanForce(false);
+
+    if (!/^https?:\/\//i.test(url.trim())) {
+      setError('O endereço deve começar com http:// ou https://');
+      return;
+    }
+
     saveAuth({ url: url.trim(), apiKey: apiKey.trim(), accountId: accountId.trim() || '1' });
-    onAuthed();
+    setLoading(true);
+    try {
+      await verifyConnection();
+      onAuthed();
+    } catch (err) {
+      setError(`Não consegui conectar — confira o endereço e a chave. (${err.message})`);
+      setCanForce(true);
+    } finally {
+      setLoading(false);
+    }
   }
+
+  const field = 'mt-1 w-full rounded-lg bg-slate-700 px-3 py-2 outline-none ring-indigo-500 focus:ring-2';
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-900 p-4">
-      <form onSubmit={submit} className="w-full max-w-sm space-y-4 rounded-2xl bg-slate-800 p-6 text-slate-100">
-        <h1 className="text-xl font-semibold">Megachat</h1>
-        <p className="text-sm text-slate-400">Conecte-se ao seu Libredesk.</p>
-        <label className="block text-sm">
-          URL do Libredesk
-          <input className="mt-1 w-full rounded-lg bg-slate-700 px-3 py-2" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://..." required />
+      <form onSubmit={submit} className="w-full max-w-sm space-y-5 rounded-2xl bg-slate-800 p-6 text-slate-100 shadow-xl">
+        <header className="flex flex-col items-center gap-2 text-center">
+          <img src="/icons/icon.svg" alt="" className="h-14 w-14" />
+          <h1 className="text-2xl font-semibold">Megachat</h1>
+          <p className="text-sm text-slate-400">Seu inbox de todos os canais, num só lugar.</p>
+        </header>
+
+        <label className="block text-sm font-medium">
+          Endereço do atendimento
+          <input
+            className={field}
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="https://..."
+            inputMode="url"
+            autoComplete="url"
+            required
+          />
+          <span className="mt-1 block text-xs text-slate-500">O endereço do seu Libredesk.</span>
         </label>
-        <label className="block text-sm">
-          API key
-          <input className="mt-1 w-full rounded-lg bg-slate-700 px-3 py-2" type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} required />
+
+        <label className="block text-sm font-medium">
+          Chave de acesso
+          <div className="relative mt-1">
+            <input
+              className={`${field} mt-0 pr-10`}
+              type={showKey ? 'text' : 'password'}
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              autoComplete="current-password"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowKey((v) => !v)}
+              className="absolute inset-y-0 right-0 px-3 text-slate-400"
+              aria-label={showKey ? 'Ocultar chave' : 'Mostrar chave'}
+            >
+              {showKey ? '🙈' : '👁'}
+            </button>
+          </div>
+          <span className="mt-1 block text-xs text-slate-500">A API key gerada no Libredesk.</span>
         </label>
-        <label className="block text-sm">
-          Account ID
-          <input className="mt-1 w-full rounded-lg bg-slate-700 px-3 py-2" value={accountId} onChange={(e) => setAccountId(e.target.value)} />
-        </label>
-        <button className="w-full rounded-lg bg-indigo-500 py-2 font-medium">Entrar</button>
+
+        <div>
+          <button type="button" onClick={() => setShowAdvanced((v) => !v)} className="text-xs text-slate-400">
+            {showAdvanced ? '▾' : '▸'} Avançado
+          </button>
+          {showAdvanced && (
+            <label className="mt-2 block text-sm font-medium">
+              Account ID
+              <input
+                className={field}
+                value={accountId}
+                onChange={(e) => setAccountId(e.target.value)}
+                inputMode="numeric"
+              />
+              <span className="mt-1 block text-xs text-slate-500">Normalmente 1.</span>
+            </label>
+          )}
+        </div>
+
+        {error && (
+          <p className="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-300" role="alert">{error}</p>
+        )}
+
+        <button
+          disabled={loading}
+          className="flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-500 py-2.5 font-medium hover:bg-indigo-400 disabled:opacity-60"
+        >
+          {loading && <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />}
+          {loading ? 'Entrando…' : 'Entrar'}
+        </button>
+
+        {canForce && (
+          <button type="button" onClick={onAuthed} className="block w-full text-center text-xs text-slate-400 underline">
+            Entrar mesmo assim
+          </button>
+        )}
       </form>
     </div>
   );
