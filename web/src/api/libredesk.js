@@ -8,7 +8,7 @@
 //    instância. Estão centralizados aqui de propósito: quando a API real for
 //    confirmada, o ajuste é só neste arquivo.
 
-import { isDemo, disableDemo, demoConversations, demoMessages, demoSend } from './demo.js';
+import { isDemo, disableDemo, demoConversations, demoMessages, demoSend, demoMarkRead, demoSetCategory } from './demo.js';
 
 const STORAGE_KEY = 'megachat.auth';
 
@@ -107,11 +107,21 @@ export function sendReply(conversationId, content, attachment) {
   });
 }
 
-// Marcar conversa como resolvida
-export function resolveConversation(conversationId) {
-  if (isDemo()) return Promise.resolve(null);
+// Marcar conversa como lida (zera não-lidas) — ao abri-la.
+export function markRead(conversationId) {
+  if (isDemo()) { demoMarkRead(conversationId); return Promise.resolve(); }
+  // ⚠️ endpoint real de "marcar como lida" a validar contra o Libredesk.
   return request(accountPath(`/conversations/${conversationId}`), {
     method: 'PATCH',
-    body: { status: 'resolved' },
+    body: { unread_count: 0 },
+  }).catch(() => {});
+}
+
+// Definir a categoria da conversa (no real, mapeia pra label/status — a validar).
+export function setCategory(conversationId, category) {
+  if (isDemo()) { demoSetCategory(conversationId, category); return Promise.resolve(); }
+  return request(accountPath(`/conversations/${conversationId}`), {
+    method: 'PATCH',
+    body: { category },
   });
 }

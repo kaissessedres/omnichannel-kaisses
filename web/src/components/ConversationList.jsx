@@ -2,6 +2,7 @@ import { Inbox } from 'lucide-react';
 import ChannelBadge from './ChannelBadge.jsx';
 import StateView from './StateView.jsx';
 import { formatRelative } from '../lib/time.js';
+import { categoryLabel, categoryClass } from '../lib/categories.js';
 
 // Lista de conversas. Os nomes de campo (contact, channel, last_message) ainda
 // dependem do formato real da API do Libredesk — por isso os vários fallbacks.
@@ -33,6 +34,9 @@ export default function ConversationList({ conversations, onOpen }) {
                   <span className={`block flex-1 truncate text-sm ${unread ? 'text-slate-300' : 'text-slate-400'}`}>{preview}</span>
                   {unread > 0 && <span className="badge badge-primary badge-sm shrink-0">{unread}</span>}
                 </span>
+                {c.category && (
+                  <span className={`badge badge-sm mt-1 ${categoryClass(c.category)}`}>{categoryLabel(c.category)}</span>
+                )}
               </span>
             </button>
           </li>

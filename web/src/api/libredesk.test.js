@@ -1,7 +1,7 @@
 import { beforeEach, afterEach, describe, it, expect, vi } from 'vitest';
 import {
   getAuth, saveAuth, clearAuth,
-  listConversations, listMessages, sendReply, resolveConversation, verifyConnection,
+  listConversations, listMessages, sendReply, setCategory, verifyConnection,
 } from './libredesk.js';
 
 const AUTH = { url: 'https://ld.example', apiKey: 'secret', accountId: '9' };
@@ -63,15 +63,15 @@ describe('chamadas à API', () => {
     expect(JSON.parse(opts.body)).toEqual({ content: 'olá' });
   });
 
-  it('resolveConversation faz PATCH com { status: resolved }', async () => {
+  it('setCategory faz PATCH com { category }', async () => {
     saveAuth(AUTH);
     const fetchFn = mockFetch({});
-    await resolveConversation('c1');
+    await setCategory('c1', 'pedido_feito');
 
     const [url, opts] = fetchFn.mock.calls[0];
     expect(url).toBe('https://ld.example/api/v1/accounts/9/conversations/c1');
     expect(opts.method).toBe('PATCH');
-    expect(JSON.parse(opts.body)).toEqual({ status: 'resolved' });
+    expect(JSON.parse(opts.body)).toEqual({ category: 'pedido_feito' });
   });
 
   it('204 (sem corpo) devolve null', async () => {
@@ -79,7 +79,7 @@ describe('chamadas à API', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: true, status: 204, json: async () => { throw new Error('sem corpo'); },
     }));
-    expect(await resolveConversation('c1')).toBeNull();
+    expect(await setCategory('c1', 'resolvido')).toBeNull();
   });
 
   it('lança "Não autenticado" (amigável) quando não há auth — não um TypeError críptico', () => {

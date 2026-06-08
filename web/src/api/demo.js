@@ -36,11 +36,11 @@ const INBOX = {
 };
 
 export const demoConversations = [
-  { id: 'c1', channel: 'whatsapp',     inbox: INBOX.whatsapp,  contact: { name: 'Marina Souza' }, last_message: 'Oi! A caneca personalizada já saiu?', last_activity_at: ago(3 * min), unread_count: 2 },
-  { id: 'c2', channel: 'instagram',    inbox: INBOX.instagram, contact: { name: 'ateliê.gabi' },   last_message: 'Amei o orçamento, vou fechar 💜',      last_activity_at: ago(40 * min) },
-  { id: 'c3', channel: 'mercadolivre', inbox: INBOX.ml1,       contact: { name: 'João P.' },       last_message: 'Consigo retirar amanhã de manhã?',    last_activity_at: ago(3 * 60 * min) },
-  { id: 'c5', channel: 'mercadolivre', inbox: INBOX.ml2,       contact: { name: 'Bruna L.' },      last_message: 'Chega quando pro CEP 30110-000?',     last_activity_at: ago(5 * 60 * min), unread_count: 3 },
-  { id: 'c4', channel: 'shopee',       inbox: INBOX.shopee,    contact: { name: 'Loja do Léo' },   last_message: 'Tem desconto pra pedido no atacado?', last_activity_at: ago(26 * 60 * min), unread_count: 1 },
+  { id: 'c1', channel: 'whatsapp',     inbox: INBOX.whatsapp,  contact: { name: 'Marina Souza' }, last_message: 'Oi! A caneca personalizada já saiu?', last_activity_at: ago(3 * min), unread_count: 2, category: 'pedido_feito' },
+  { id: 'c2', channel: 'instagram',    inbox: INBOX.instagram, contact: { name: 'ateliê.gabi' },   last_message: 'Amei o orçamento, vou fechar 💜',      last_activity_at: ago(40 * min), category: 'orcamento' },
+  { id: 'c3', channel: 'mercadolivre', inbox: INBOX.ml1,       contact: { name: 'João P.' },       last_message: 'Consigo retirar amanhã de manhã?',    last_activity_at: ago(3 * 60 * min), category: 'primeiro_contato' },
+  { id: 'c5', channel: 'mercadolivre', inbox: INBOX.ml2,       contact: { name: 'Bruna L.' },      last_message: 'Chega quando pro CEP 30110-000?',     last_activity_at: ago(5 * 60 * min), unread_count: 3, category: 'pedido_feito' },
+  { id: 'c4', channel: 'shopee',       inbox: INBOX.shopee,    contact: { name: 'Loja do Léo' },   last_message: 'Tem desconto pra pedido no atacado?', last_activity_at: ago(26 * 60 * min), unread_count: 1, category: 'primeiro_contato' },
 ];
 
 export const demoMessages = {
@@ -89,6 +89,18 @@ const SAMPLE_INCOMING = [
   'Consigo um brinde no combo? 🙏',
   'Vocês fazem entrega hoje?',
 ];
+
+// Marca a conversa como lida (zera não-lidas) — ao abri-la.
+export function demoMarkRead(id) {
+  const c = demoConversations.find((x) => x.id === id);
+  if (c) c.unread_count = 0;
+}
+
+// Define a categoria da conversa.
+export function demoSetCategory(id, category) {
+  const c = demoConversations.find((x) => x.id === id);
+  if (c) c.category = category;
+}
 
 // Simula uma mensagem nova chegando: escolhe uma conversa, incrementa não-lidas,
 // atualiza a prévia e acrescenta a mensagem (incoming). Usado pelo botão

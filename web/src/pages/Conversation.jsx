@@ -1,18 +1,22 @@
 import { useEffect, useState } from 'react';
-import { ChevronLeft, CheckCircle2, AlertTriangle } from 'lucide-react';
-import { listMessages, sendReply, resolveConversation } from '../api/libredesk.js';
+import { ChevronLeft, AlertTriangle, Tag } from 'lucide-react';
+import { listMessages, sendReply, markRead, setCategory } from '../api/libredesk.js';
 import { conversationGroup } from '../lib/inboxes.js';
+import { CATEGORIES } from '../lib/categories.js';
 import MessageThread from '../components/MessageThread.jsx';
 import ReplyBox from '../components/ReplyBox.jsx';
 import ChannelBadge from '../components/ChannelBadge.jsx';
 import Spinner from '../components/Spinner.jsx';
 import StateView from '../components/StateView.jsx';
 
-// Conversa aberta: thread de mensagens + caixa de resposta fixa no rodapé.
+// Conversa aberta: thread de mensagens + caixa de resposta. Ao abrir, marca como
+// lida (zera não-lidas). O header tem um seletor de categoria (no lugar do antigo
+// botão "Resolver").
 export default function Conversation({ conversation, onBack }) {
   const [messages, setMessages] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [category, setCat] = useState(conversation.category || '');
 
   async function load() {
     setLoading(true);
@@ -27,21 +31,24 @@ export default function Conversation({ conversation, onBack }) {
     }
   }
 
-  useEffect(() => { load(); }, [conversation.id]);
+  useEffect(() => {
+    markRead(conversation.id); // visualizou → zera não-lidas
+    load();
+  }, [conversation.id]);
 
   async function reply(text, attachment) {
     await sendReply(conversation.id, text, attachment);
     await load();
   }
 
-  async function resolve() {
-    await resolveConversation(conversation.id);
-    onBack();
+  function changeCategory(value) {
+    setCat(value);
+    setCategory(conversation.id, value);
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-900 text-slate-100">
-      <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-slate-800 bg-slate-900/95 px-3 py-3 backdrop-blur">
+    <div className="flex min-h-screen flex-col bg-app text-slate-100">
+      <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-slate-800 bg-slate-900/95 px-3 py-3 backdrop-blur">
         <button onClick={onBack} className="flex items-center px-1 text-slate-400 hover:text-slate-100" aria-label="Voltar">
           <ChevronLeft className="h-6 w-6" />
         </button>
@@ -50,9 +57,18 @@ export default function Conversation({ conversation, onBack }) {
           <span className="block truncate font-medium leading-tight">{conversation.contact?.name || `#${conversation.id}`}</span>
           <span className="block truncate text-xs text-slate-400">{conversationGroup(conversation).label}</span>
         </span>
-        <button onClick={resolve} className="flex items-center gap-1 text-sm text-slate-400 hover:text-slate-100">
-          <CheckCircle2 className="h-4 w-4" /> Resolver
-        </button>
+        <label className="flex items-center gap-1 text-slate-400" title="Categoria">
+          <Tag className="h-4 w-4" />
+          <select
+            value={category}
+            onChange={(e) => changeCategory(e.target.value)}
+            aria-label="Categoria"
+            className="select select-xs max-w-[8.5rem] bg-slate-800 text-slate-200"
+          >
+            <option value="">Categoria…</option>
+            {CATEGORIES.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}
+          </select>
+        </label>
       </header>
 
       {loading ? (

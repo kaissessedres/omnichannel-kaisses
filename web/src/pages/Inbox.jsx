@@ -3,23 +3,29 @@ import { RefreshCw, LogOut, AlertTriangle, Bell, BellOff, MessageSquarePlus } fr
 import { listConversations, clearAuth } from '../api/libredesk.js';
 import { isDemo, demoSimulateIncoming } from '../api/demo.js';
 import { accountTabs, filterByTab } from '../lib/inboxes.js';
-import { newIncoming, playDing, notify, requestNotificationPermission } from '../lib/notify.js';
+import { categoryFilters, filterByCategory } from '../lib/categories.js';
+import { newIncoming, playDing, vibrate, notify, requestNotificationPermission } from '../lib/notify.js';
 import ConversationList from '../components/ConversationList.jsx';
 import Spinner from '../components/Spinner.jsx';
 import StateView from '../components/StateView.jsx';
 
 const POLL_MS = 15000; // auto-refresh da lista
 
-// Tela principal: lista as conversas abertas, com abas por conta e alertas
-// (som + notificação) quando chega mensagem nova.
+function alertsInitial() {
+  try { return localStorage.getItem('megachat.alerts') !== '0'; } catch { return true; }
+}
+
+// Tela principal: conversas abertas, com abas por conta, filtro por categoria e
+// alertas (som + vibração + notificação) quando chega mensagem nova.
 export default function Inbox({ onOpen, onLogout }) {
   const [conversations, setConversations] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('all');
-  const [alerts, setAlerts] = useState(true);
+  const [cat, setCatFilter] = useState('all');
+  const [alerts, setAlerts] = useState(alertsInitial);
 
-  const prevRef = useRef(null);   // snapshot da última lista (pra detectar novas)
+  const prevRef = useRef(null);
   const alertsRef = useRef(alerts);
   alertsRef.current = alerts;
 
@@ -28,11 +34,11 @@ export default function Inbox({ onOpen, onLogout }) {
       const data = await listConversations('open');
       const list = data?.data || data?.conversations || data || [];
 
-      // Dispara alerta só depois da 1ª carga (não na abertura do app).
       if (prevRef.current && alertsRef.current) {
         const novas = newIncoming(prevRef.current, list);
         if (novas.length) {
           playDing();
+          vibrate();
           const nome = novas[0].contact?.name || 'cliente';
           notify('Nova mensagem', novas.length === 1 ? `De ${nome}` : `${novas.length} novas conversas`);
         }
@@ -60,8 +66,10 @@ export default function Inbox({ onOpen, onLogout }) {
 
   function toggleAlerts() {
     setAlerts((on) => {
-      if (!on) requestNotificationPermission(); // ao ligar, pede permissão (gesto do usuário)
-      return !on;
+      const next = !on;
+      try { localStorage.setItem('megachat.alerts', next ? '1' : '0'); } catch { /* ignore */ }
+      if (next) requestNotificationPermission();
+      return next;
     });
   }
 
@@ -72,10 +80,14 @@ export default function Inbox({ onOpen, onLogout }) {
 
   const tabs = accountTabs(conversations);
   const activeTab = tabs.some((t) => t.key === tab) ? tab : 'all';
-  const visible = filterByTab(conversations, activeTab);
+  const byAccount = filterByTab(conversations, activeTab);
+
+  const catChips = categoryFilters(byAccount);
+  const activeCat = catChips.some((c) => c.key === cat) ? cat : 'all';
+  const visible = filterByCategory(byAccount, activeCat);
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-900 text-slate-100">
+    <div className="flex min-h-screen flex-col bg-app text-slate-100">
       <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-800 bg-slate-900/95 px-3 py-3 backdrop-blur">
         <h1 className="text-lg font-semibold">Conversas</h1>
         <div className="flex items-center gap-0.5 text-slate-400">
@@ -97,20 +109,38 @@ export default function Inbox({ onOpen, onLogout }) {
       </header>
 
       {!loading && !error && conversations.length > 0 && (
-        <nav className="sticky top-[57px] z-10 flex gap-1 overflow-x-auto border-b border-slate-800 bg-slate-900/95 px-2 py-2 backdrop-blur">
-          {tabs.map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition-colors ${
-                activeTab === t.key ? 'bg-indigo-500 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-              }`}
-            >
-              {t.label}
-              <span className={activeTab === t.key ? 'opacity-80' : 'text-slate-500'}>{t.count}</span>
-            </button>
-          ))}
-        </nav>
+        <>
+          <nav className="sticky top-[57px] z-10 flex gap-1 overflow-x-auto border-b border-slate-800 bg-slate-900/95 px-2 py-2 backdrop-blur">
+            {tabs.map((t) => (
+              <button
+                key={t.key}
+                onClick={() => setTab(t.key)}
+                className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition-colors ${
+                  activeTab === t.key ? 'bg-indigo-500 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                }`}
+              >
+                {t.label}
+                <span className={activeTab === t.key ? 'opacity-80' : 'text-slate-500'}>{t.count}</span>
+              </button>
+            ))}
+          </nav>
+
+          {catChips.length > 1 && (
+            <nav className="flex gap-1 overflow-x-auto border-b border-slate-800/60 bg-slate-900/80 px-2 py-1.5">
+              {catChips.map((c) => (
+                <button
+                  key={c.key}
+                  onClick={() => setCatFilter(c.key)}
+                  className={`shrink-0 rounded-full px-2.5 py-1 text-xs transition-colors ${
+                    activeCat === c.key ? 'bg-slate-200 text-slate-900' : 'bg-slate-800/70 text-slate-400 hover:bg-slate-700'
+                  }`}
+                >
+                  {c.label} <span className="opacity-70">{c.count}</span>
+                </button>
+              ))}
+            </nav>
+          )}
+        </>
       )}
 
       {loading ? (

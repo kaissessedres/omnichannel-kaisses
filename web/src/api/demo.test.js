@@ -1,6 +1,6 @@
 import { afterEach, describe, it, expect } from 'vitest';
 import { isDemo, enableDemo, disableDemo } from './demo.js';
-import { listConversations, listMessages, sendReply } from './libredesk.js';
+import { listConversations, listMessages, sendReply, markRead, setCategory } from './libredesk.js';
 
 afterEach(() => localStorage.clear());
 
@@ -22,6 +22,20 @@ describe('modo demonstração', () => {
     const msgs = await listMessages(convs.data[0].id);
     expect(Array.isArray(msgs.data)).toBe(true);
     expect(msgs.data.length).toBeGreaterThan(0);
+  });
+
+  it('markRead zera as não-lidas da conversa (visualizou)', async () => {
+    enableDemo();
+    await markRead('c1');
+    const c1 = (await listConversations()).data.find((c) => c.id === 'c1');
+    expect(c1.unread_count).toBe(0);
+  });
+
+  it('setCategory define a categoria da conversa', async () => {
+    enableDemo();
+    await setCategory('c3', 'resolvido');
+    const c3 = (await listConversations()).data.find((c) => c.id === 'c3');
+    expect(c3.category).toBe('resolvido');
   });
 
   it('sendReply em demo acrescenta a mensagem do lojista (outgoing) à conversa', async () => {

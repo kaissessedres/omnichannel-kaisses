@@ -43,7 +43,7 @@ export default function Login({ onAuthed }) {
   const field = 'mt-1 w-full rounded-lg bg-slate-700 px-3 py-2 outline-none ring-indigo-500 focus:ring-2';
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-900 p-4">
+    <div className="flex min-h-screen items-center justify-center bg-app p-4">
       <form onSubmit={submit} className="w-full max-w-sm space-y-5 rounded-2xl bg-slate-800 p-6 text-slate-100 shadow-xl">
         <header className="flex flex-col items-center gap-2 text-center">
           <img src="/icons/icon.svg" alt="" className="h-14 w-14" />

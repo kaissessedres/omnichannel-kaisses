@@ -14,26 +14,41 @@ export function newIncoming(prev, next) {
   });
 }
 
-// Um "ding" curto via Web Audio (sem precisar de arquivo de som).
+// Um chime curtinho e agradável (duas notas ascendentes) via Web Audio —
+// sem precisar de arquivo de som.
 export function playDing() {
   try {
     const Ctx = window.AudioContext || window.webkitAudioContext;
     if (!Ctx) return;
     const ctx = new Ctx();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.type = 'sine';
-    osc.frequency.value = 880;
-    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.3);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.3);
-    osc.onended = () => ctx.close?.();
+    const now = ctx.currentTime;
+    // A5 → D6: "ti-lim" suave
+    for (const [freq, at] of [[880, 0], [1174.66, 0.12]]) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      const start = now + at;
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(0.22, start + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.28);
+      osc.start(start);
+      osc.stop(start + 0.3);
+    }
+    setTimeout(() => ctx.close?.(), 700);
   } catch {
     /* sem áudio disponível */
+  }
+}
+
+// Vibra no celular (Vibration API). Guardado — ignora onde não há suporte (iOS).
+export function vibrate(pattern = [40, 30, 60]) {
+  try {
+    navigator.vibrate?.(pattern);
+  } catch {
+    /* ignore */
   }
 }
 
