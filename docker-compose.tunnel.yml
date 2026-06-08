@@ -1,0 +1,23 @@
+# Megachat — túnel Cloudflare (deploy desktop, Nível B)
+#
+# OPT-IN: este arquivo NÃO sobe sozinho. Some-o ao stack só quando for expor o
+# Libredesk com HTTPS pública (PWA pelo celular fora de casa + callbacks OAuth):
+#
+#   docker compose -f docker-compose.yml -f docker-compose.tunnel.yml up -d
+#
+# O Nível A (local) segue com o `docker compose up -d` normal, sem túnel.
+#
+# Pré-requisito: CLOUDFLARE_TUNNEL_TOKEN no .env (token de um túnel nomeado em
+# Cloudflare Zero Trust > Networks > Tunnels), e o Public Hostname do túnel
+# apontando para o serviço interno http://nginx:80. Passo a passo:
+# docs/DEPLOY-desktop.md §4.2.
+
+services:
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    depends_on:
+      - nginx
+    # Alcança o nginx pela rede interna do Compose (mesma do stack base) — não
+    # precisa abrir porta no host nem no roteador.
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}

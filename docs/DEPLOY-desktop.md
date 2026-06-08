@@ -172,23 +172,22 @@ Bom para um teste rápido de ponta a ponta; não serve para produção (URL vol�
 
 Precisa de uma conta Cloudflare (grátis) com um **domínio** gerenciado por ela.
 
+O serviço `cloudflared` já vem pronto em **`docker-compose.tunnel.yml`** (na raiz
+do repo) — é opt-in, não sobe sozinho. Você só precisa do token e de subir com os
+dois arquivos:
+
 1. No painel **Cloudflare Zero Trust → Networks → Tunnels → Create a tunnel**.
 2. Escolha **Cloudflared**, dê um nome (ex: `megachat`), copie o **token**.
-3. Adicione o token ao `.env`: `CLOUDFLARE_TUNNEL_TOKEN=...`
-4. Adicione um serviço ao `docker-compose.yml` (na rede interna, alcança o nginx):
+3. Ponha o token no `.env`: `CLOUDFLARE_TUNNEL_TOKEN=...`
+4. No painel do túnel, em **Public Hostnames**, aponte
+   `megachat.seudominio.com` → **Service** `http://nginx:80`.
+5. Suba o stack **com o arquivo do túnel** somado ao base:
 
-   ```yaml
-     cloudflared:
-       image: cloudflare/cloudflared:latest
-       restart: unless-stopped
-       depends_on:
-         - nginx
-       command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+   ```bash
+   docker compose -f docker-compose.yml -f docker-compose.tunnel.yml up -d
    ```
 
-5. No painel do túnel, em **Public Hostnames**, aponte
-   `megachat.seudominio.com` → **Service** `http://nginx:80`.
-6. `docker compose up -d cloudflared`.
+   (O Nível A local continua com o `docker compose up -d` normal, sem túnel.)
 
 Agora o Libredesk está em `https://megachat.seudominio.com` com HTTPS válido.
 
