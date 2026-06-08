@@ -67,3 +67,23 @@ export function demoSend(conversationId, content) {
     created_at: new Date().toISOString(),
   });
 }
+
+const SAMPLE_INCOMING = [
+  'Oi! Ainda dá tempo de mudar a arte?',
+  'Bom dia, chegou meu pedido?',
+  'Consigo um brinde no combo? 🙏',
+  'Vocês fazem entrega hoje?',
+];
+
+// Simula uma mensagem nova chegando: escolhe uma conversa, incrementa não-lidas,
+// atualiza a prévia e acrescenta a mensagem (incoming). Usado pelo botão
+// "simular mensagem" no modo demo, pra disparar o som/notificação.
+export function demoSimulateIncoming() {
+  const c = demoConversations[Math.floor(Math.random() * demoConversations.length)];
+  const text = SAMPLE_INCOMING[Math.floor(Math.random() * SAMPLE_INCOMING.length)];
+  c.unread_count = (c.unread_count || 0) + 1;
+  c.last_message = text;
+  c.last_activity_at = new Date().toISOString();
+  (demoMessages[c.id] ||= []).push({ id: `sim${Date.now()}`, message_type: 'incoming', content: text, created_at: new Date().toISOString() });
+  return c;
+}

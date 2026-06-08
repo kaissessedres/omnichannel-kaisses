@@ -59,7 +59,9 @@ function accountPath(suffix = '') {
 
 // Conversas abertas (tela principal)
 export function listConversations(status = 'open') {
-  if (isDemo()) return Promise.resolve({ data: demoConversations });
+  // Cópias a cada chamada pra detecção de "mensagem nova" enxergar mudanças
+  // (o demo muta o array em memória; sem copiar, prev e next seriam o mesmo ref).
+  if (isDemo()) return Promise.resolve({ data: demoConversations.map((c) => ({ ...c })) });
   return request(`${accountPath('/conversations')}?status=${encodeURIComponent(status)}`);
 }
 
@@ -71,7 +73,7 @@ export async function verifyConnection() {
 
 // Mensagens de uma conversa (thread)
 export function listMessages(conversationId) {
-  if (isDemo()) return Promise.resolve({ data: demoMessages[conversationId] || [] });
+  if (isDemo()) return Promise.resolve({ data: [...(demoMessages[conversationId] || [])] });
   return request(accountPath(`/conversations/${conversationId}/messages`));
 }
 

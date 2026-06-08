@@ -41,6 +41,16 @@ describe('Inbox', () => {
     await waitFor(() => expect(screen.getByText(/nenhuma conversa aberta/i)).toBeTruthy());
   });
 
+  it('tem botão de alertas (sino) que alterna', async () => {
+    auth();
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ data: [] }) }));
+    render(<Inbox onOpen={() => {}} onLogout={() => {}} />);
+
+    await waitFor(() => expect(screen.getByText(/nenhuma conversa aberta/i)).toBeTruthy());
+    fireEvent.click(screen.getByRole('button', { name: /desativar alertas/i }));
+    expect(screen.getByRole('button', { name: /ativar alertas/i })).toBeTruthy();
+  });
+
   it('mostra abas por conta e filtra a lista ao trocar de aba', async () => {
     auth();
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({

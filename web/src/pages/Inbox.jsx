@@ -1,49 +1,92 @@
-import { useEffect, useState } from 'react';
-import { RefreshCw, LogOut, AlertTriangle } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { RefreshCw, LogOut, AlertTriangle, Bell, BellOff, MessageSquarePlus } from 'lucide-react';
 import { listConversations, clearAuth } from '../api/libredesk.js';
+import { isDemo, demoSimulateIncoming } from '../api/demo.js';
 import { accountTabs, filterByTab } from '../lib/inboxes.js';
+import { newIncoming, playDing, notify, requestNotificationPermission } from '../lib/notify.js';
 import ConversationList from '../components/ConversationList.jsx';
 import Spinner from '../components/Spinner.jsx';
 import StateView from '../components/StateView.jsx';
 
-// Tela principal: lista as conversas abertas, com abas por conta (Todos + cada
-// canal/conta conectada).
+const POLL_MS = 15000; // auto-refresh da lista
+
+// Tela principal: lista as conversas abertas, com abas por conta e alertas
+// (som + notificação) quando chega mensagem nova.
 export default function Inbox({ onOpen, onLogout }) {
   const [conversations, setConversations] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('all');
+  const [alerts, setAlerts] = useState(true);
 
-  async function load() {
-    setLoading(true);
-    setError(null);
+  const prevRef = useRef(null);   // snapshot da última lista (pra detectar novas)
+  const alertsRef = useRef(alerts);
+  alertsRef.current = alerts;
+
+  const load = useCallback(async () => {
     try {
       const data = await listConversations('open');
-      setConversations(data?.data || data?.conversations || data || []);
+      const list = data?.data || data?.conversations || data || [];
+
+      // Dispara alerta só depois da 1ª carga (não na abertura do app).
+      if (prevRef.current && alertsRef.current) {
+        const novas = newIncoming(prevRef.current, list);
+        if (novas.length) {
+          playDing();
+          const nome = novas[0].contact?.name || 'cliente';
+          notify('Nova mensagem', novas.length === 1 ? `De ${nome}` : `${novas.length} novas conversas`);
+        }
+      }
+      prevRef.current = list;
+      setConversations(list);
+      setError(null);
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    const t = setInterval(load, POLL_MS);
+    return () => clearInterval(t);
+  }, [load]);
 
   function logout() {
     clearAuth();
     onLogout();
   }
 
+  function toggleAlerts() {
+    setAlerts((on) => {
+      if (!on) requestNotificationPermission(); // ao ligar, pede permissão (gesto do usuário)
+      return !on;
+    });
+  }
+
+  async function simulate() {
+    demoSimulateIncoming();
+    await load();
+  }
+
   const tabs = accountTabs(conversations);
-  // Se a aba selecionada sumiu (ex: depois de um refresh), volta pra "Todos".
   const activeTab = tabs.some((t) => t.key === tab) ? tab : 'all';
   const visible = filterByTab(conversations, activeTab);
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-900 text-slate-100">
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-800 bg-slate-900/95 px-4 py-3 backdrop-blur">
+      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-800 bg-slate-900/95 px-3 py-3 backdrop-blur">
         <h1 className="text-lg font-semibold">Conversas</h1>
-        <div className="flex items-center gap-1 text-slate-400">
+        <div className="flex items-center gap-0.5 text-slate-400">
+          {isDemo() && (
+            <button onClick={simulate} className="btn btn-ghost btn-sm btn-square" aria-label="Simular mensagem">
+              <MessageSquarePlus className="h-5 w-5" />
+            </button>
+          )}
+          <button onClick={toggleAlerts} className="btn btn-ghost btn-sm btn-square" aria-label={alerts ? 'Desativar alertas' : 'Ativar alertas'}>
+            {alerts ? <Bell className="h-5 w-5" /> : <BellOff className="h-5 w-5" />}
+          </button>
           <button onClick={load} className="btn btn-ghost btn-sm btn-square" aria-label="Atualizar">
             <RefreshCw className="h-5 w-5" />
           </button>
