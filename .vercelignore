@@ -1,0 +1,11 @@
+# O deploy do Vercel só precisa do web/ (o bridge vai pro Oracle via Docker).
+node_modules
+web/node_modules
+web/dist
+data
+src
+test
+docs
+nginx
+.github
+*.db
