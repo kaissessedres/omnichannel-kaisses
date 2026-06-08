@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { formatTime } from '../lib/time.js';
 
-// Thread de mensagens. Mensagens do lojista (outgoing) vão à direita; do
-// cliente, à esquerda. O critério de "outgoing" depende do formato da API real.
+// Thread de mensagens com as bolhas de chat do daisyUI. Mensagens do lojista
+// (outgoing) vão à direita (chat-end); do cliente, à esquerda (chat-start).
 export default function MessageThread({ messages }) {
   const endRef = useRef(null);
 
@@ -17,17 +17,16 @@ export default function MessageThread({ messages }) {
   }
 
   return (
-    <div className="flex-1 space-y-1.5 overflow-y-auto p-4">
+    <div className="flex-1 overflow-y-auto p-4">
       {messages.map((m) => {
         const outgoing = m.message_type === 'outgoing' || m.outgoing;
         const time = formatTime(m.created_at || m.created_time);
         return (
-          <div
-            key={m.id}
-            className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${outgoing ? 'ml-auto bg-indigo-600' : 'bg-slate-700'}`}
-          >
-            <span className="whitespace-pre-wrap break-words">{m.content}</span>
-            {time && <span className="mt-0.5 block text-right text-[10px] text-white/50">{time}</span>}
+          <div key={m.id} className={`chat ${outgoing ? 'chat-end' : 'chat-start'}`}>
+            <div className={`chat-bubble whitespace-pre-wrap break-words ${outgoing ? 'chat-bubble-primary' : ''}`}>
+              {m.content}
+            </div>
+            {time && <div className="chat-footer mt-0.5 text-[10px] opacity-50">{time}</div>}
           </div>
         );
       })}

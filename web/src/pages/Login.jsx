@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 import { saveAuth, verifyConnection } from '../api/libredesk.js';
 
 // Primeira abertura: pede o endereço do Libredesk + a chave de acesso (API key)
@@ -77,10 +78,10 @@ export default function Login({ onAuthed }) {
             <button
               type="button"
               onClick={() => setShowKey((v) => !v)}
-              className="absolute inset-y-0 right-0 px-3 text-slate-400"
+              className="absolute inset-y-0 right-0 flex items-center px-3 text-slate-400"
               aria-label={showKey ? 'Ocultar chave' : 'Mostrar chave'}
             >
-              {showKey ? '🙈' : '👁'}
+              {showKey ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
             </button>
           </div>
           <span className="mt-1 block text-xs text-slate-500">A API key gerada no Libredesk.</span>
@@ -108,11 +109,8 @@ export default function Login({ onAuthed }) {
           <p className="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-300" role="alert">{error}</p>
         )}
 
-        <button
-          disabled={loading}
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-500 py-2.5 font-medium hover:bg-indigo-400 disabled:opacity-60"
-        >
-          {loading && <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />}
+        <button disabled={loading} className="btn btn-primary w-full">
+          {loading && <span className="loading loading-spinner loading-sm" />}
           {loading ? 'Entrando…' : 'Entrar'}
         </button>
 

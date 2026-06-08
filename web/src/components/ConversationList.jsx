@@ -1,3 +1,4 @@
+import { Inbox } from 'lucide-react';
 import ChannelBadge from './ChannelBadge.jsx';
 import StateView from './StateView.jsx';
 import { formatRelative } from '../lib/time.js';
@@ -6,7 +7,7 @@ import { formatRelative } from '../lib/time.js';
 // dependem do formato real da API do Libredesk — por isso os vários fallbacks.
 export default function ConversationList({ conversations, onOpen }) {
   if (!conversations.length) {
-    return <StateView emoji="📭" title="Nenhuma conversa aberta" hint="As novas mensagens aparecem aqui." />;
+    return <StateView icon={Inbox} title="Nenhuma conversa aberta" hint="As novas mensagens aparecem aqui." />;
   }
 
   return (
