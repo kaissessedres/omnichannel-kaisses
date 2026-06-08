@@ -59,16 +59,17 @@ async function pollAccount(account) {
 }
 
 function startPolling() {
+  // Os canais a pollar saem das chaves de POLLED — uma fonte só, pra não
+  // divergir do registro central quando um conector novo entra (ex: Shopee).
+  const channels = Object.keys(POLLED);
+
   // Executa a cada 30 segundos
   cron.schedule('*/30 * * * * *', async () => {
-    const accounts = [
-      ...getActiveAccounts('instagram'),
-      ...getActiveAccounts('mercadolivre'),
-    ];
+    const accounts = channels.flatMap((type) => getActiveAccounts(type));
     await Promise.allSettled(accounts.map(pollAccount));
   });
 
-  console.log('[poller] Polling iniciado — Instagram e Mercado Livre a cada 30s');
+  console.log(`[poller] Polling iniciado — ${channels.join(', ')} a cada 30s`);
 }
 
 module.exports = { startPolling };

@@ -196,9 +196,16 @@ ao registro `POLLED` em `connectors/index.js`.
 - **Tutorial PT:** github.com/Anonimy/MercadoLivreApplication
 
 ### 3.5 Shopee
-- **Opção A (preferida):** Shopee Open Platform — OAuth, API oficial de chat (`open.shopee.com`)
-- **Opção B (fallback):** credenciais diretas — sessão HTTP autenticada (como o Olist faz)
-- **Polling:** `GET /api/v2/sellerchat/get_message` a cada 30s por conta
+- **Decisão:** Opção A (Shopee Open Platform) — implementada. (Opção B, credenciais
+  diretas estilo Olist, foi descartada pelo risco de bloqueio de conta.)
+- **Host/assinatura:** `https://partner.shopeemobile.com`; cada chamada assinada com
+  HMAC-SHA256(`partner_key`, `partner_id+path+timestamp+access_token+shop_id`).
+- **Chat (sellerchat v2):** `get_conversation_list`, `get_message`, `send_message`.
+  Polling via `get_conversation_list` a cada 30s por conta.
+- **Token:** access_token de 4h (refresh de 30d) — o conector renova e persiste
+  (igual ao ML). Credenciais por conta: `{ shop_id, access_token, refresh_token }`.
+- **Estado:** código pronto e testado (mocks) em `src/connectors/shopee.js`; **não
+  roda sem app aprovado** na Open Platform (partner_id/key + escopo de chat).
 - **Contas:** 2 instâncias do conector
 
 ---

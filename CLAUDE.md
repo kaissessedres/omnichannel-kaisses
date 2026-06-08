@@ -88,9 +88,12 @@ Docker Compose). Migrar bridge para PostgreSQL no futuro não exige mudar o sche
 
 ## Avisos importantes
 
-⚠️ **Shopee é P2:** deixar para depois de tudo funcionar. A API de chat requer
-aprovação na Shopee Open Platform (processo burocrático). Fallback: credenciais
-diretas como o Olist faz, mas com risco de bloqueio de conta.
+⚠️ **Shopee é P2:** o **conector já existe** (`src/connectors/shopee.js` — Open
+Platform v2: assinatura HMAC, sellerchat, refresh de token de 4h), com testes
+mockados. Mas **não roda sem app aprovado** na Shopee Open Platform (partner_id/key
++ escopo de chat — processo burocrático). O gargalo aqui é a aprovação, não o
+código. Os nomes dos campos de resposta do chat devem ser reconferidos contra a
+doc viva quando as credenciais existirem.
 
 ⚠️ **Token ML expira em 6h:** ao contrário do que se supôs no início, o SDK
 oficial **não** renova sozinho — só quando chamamos `refreshAccessToken`. Além
@@ -200,7 +203,7 @@ o mesmo papel:
 }
 
 // Contrato de polling — só quem é orientado a polling implementa
-// de verdade (registrado em POLLED: hoje instagram e mercadolivre)
+// de verdade (registrado em POLLED: instagram, mercadolivre e shopee)
 {
   async fetchNewMessages(lastMsgId),  // busca mensagens novas desde o último ID
 }
@@ -225,7 +228,7 @@ preferimos evitar (ver `docs/SDD-megachat.md` seção 3.1 para mais contexto).
 - [ ] Fase 7 — Conector Mercado Livre
 - [ ] Fase 8 — Conector Instagram
 - [ ] Fase 9 — Frontend PWA (pasta `web/` — monorepo; scaffold runnable já existe, ver `web/CLAUDE.md`)
-- [ ] Fase 10 — Conector Shopee
+- [ ] Fase 10 — Conector Shopee (código pronto em `src/connectors/shopee.js`; falta aprovação na Open Platform para rodar)
 - [ ] Fase 11 — Testes e produção (suíte unitária/integração do bridge já existe — `npm test`, ver `test/`; falta e2e + produção)
 
 ### Trabalho transversal já feito (fora da ordem das fases)
@@ -236,8 +239,11 @@ falta de capacidade ("Out of host capacity" — há workflow de retry em
 mesmo stack Docker Compose no desktop do dev (sem mudança de código) — ver
 `docs/DEPLOY-desktop.md`. Enquanto isso, adiantamos o que não depende do VM:
 
-- **Suíte de testes:** `npm test` (node --test) — **94 testes**, cobrindo
+- **Suíte de testes:** `npm test` (node --test) — **103 testes**, cobrindo
   conectores, db, poller e webhooks. Ver `test/`.
+- **Conector Shopee (Open Platform v2):** `src/connectors/shopee.js` — assinatura
+  HMAC, sellerchat (get_conversation_list/get_message/send_message), refresh de
+  token de 4h. Testado com mocks; só falta a aprovação do app pra rodar.
 - **CI:** `.github/workflows/ci.yml` roda a suíte do bridge + o build do `web/`
   a cada push na main e em todo PR.
 - **Criptografia de `credentials`:** AES-256-GCM em `src/db/crypto.js`

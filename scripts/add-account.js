@@ -24,6 +24,7 @@ const OPTIONS = {
   'access-token': { type: 'string' },
   'refresh-token': { type: 'string' },
   'seller-id': { type: 'string' },
+  'shop-id': { type: 'string' },
   list: { type: 'boolean' },
   help: { type: 'boolean', short: 'h' },
 };
@@ -46,7 +47,8 @@ function resolveAccountArgs(values) {
   const credentials = {};
   if (values['access-token']) credentials.access_token = values['access-token'];
   if (values['refresh-token']) credentials.refresh_token = values['refresh-token'];
-  if (values['seller-id']) credentials.seller_id = values['seller-id'];
+  if (values['seller-id']) credentials.seller_id = values['seller-id'];   // Mercado Livre
+  if (values['shop-id']) credentials.shop_id = values['shop-id'];         // Shopee
 
   const hasCreds = Object.keys(credentials).length > 0;
   // OAuth sem token = conecta depois (disconnected). Com token, ou WhatsApp
@@ -80,8 +82,9 @@ Opções:
   --inbox         id do inbox no Libredesk                        (obrigatório)
   --instance      id da instância no Evolution API (WhatsApp)
   --access-token  semeia o token direto (pula o OAuth)
-  --refresh-token refresh token (Mercado Livre)
+  --refresh-token refresh token (Mercado Livre / Shopee)
   --seller-id     id do vendedor (Mercado Livre)
+  --shop-id       id da loja (Shopee)
   --list          lista as contas e sai
   -h, --help      esta ajuda`);
 }

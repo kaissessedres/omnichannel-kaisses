@@ -13,7 +13,6 @@ const ALL = { whatsapp, instagram, mercadolivre, shopee };
 
 // Conectores orientados a polling — implementam fetchNewMessages de verdade.
 // WhatsApp recebe via webhook do Evolution API (sem polling).
-// Shopee entra aqui quando for implementado (Fase 10).
-const POLLED = { instagram, mercadolivre };
+const POLLED = { instagram, mercadolivre, shopee };
 
 module.exports = { ALL, POLLED };

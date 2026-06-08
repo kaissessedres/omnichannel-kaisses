@@ -48,6 +48,14 @@ test('Instagram sem token → disconnected/OAuth (mesma regra do ML)', () => {
   assert.equal(needsOAuth, true);
 });
 
+test('Shopee com shop-id + tokens monta as credenciais (shop_id/access/refresh)', () => {
+  const { input } = resolveAccountArgs({
+    type: 'shopee', label: 'Shopee 1', inbox: '8',
+    'shop-id': '123', 'access-token': 'AT', 'refresh-token': 'RT',
+  });
+  assert.deepEqual(input.credentials, { access_token: 'AT', refresh_token: 'RT', shop_id: '123' });
+});
+
 test('rejeita type inválido, argumentos faltando e inbox não numérico', () => {
   assert.throws(() => resolveAccountArgs({ type: 'telegram', label: 'x', inbox: '1' }), /type inválido/);
   assert.throws(() => resolveAccountArgs({ type: 'whatsapp', inbox: '1' }), /obrigatórios/);
