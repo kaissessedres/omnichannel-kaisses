@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { listConversations, clearAuth } from '../api/libredesk.js';
 import ConversationList from '../components/ConversationList.jsx';
+import Spinner from '../components/Spinner.jsx';
+import StateView from '../components/StateView.jsx';
 
 // Tela principal: lista as conversas abertas de todos os canais.
 export default function Inbox({ onOpen, onLogout }) {
@@ -31,17 +33,22 @@ export default function Inbox({ onOpen, onLogout }) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100">
-      <header className="sticky top-0 flex items-center justify-between border-b border-slate-800 bg-slate-900/95 px-4 py-3">
+    <div className="flex min-h-screen flex-col bg-slate-900 text-slate-100">
+      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-800 bg-slate-900/95 px-4 py-3 backdrop-blur">
         <h1 className="text-lg font-semibold">Conversas</h1>
-        <div className="flex gap-3 text-sm text-slate-400">
-          <button onClick={load}>Atualizar</button>
-          <button onClick={logout}>Sair</button>
+        <div className="flex gap-4 text-sm text-slate-400">
+          <button onClick={load} className="hover:text-slate-100">Atualizar</button>
+          <button onClick={logout} className="hover:text-slate-100">Sair</button>
         </div>
       </header>
-      {loading && <p className="p-4 text-slate-400">Carregando…</p>}
-      {error && <p className="p-4 text-red-400">Erro: {error}</p>}
-      {!loading && !error && <ConversationList conversations={conversations} onOpen={onOpen} />}
+
+      {loading ? (
+        <Spinner label="Carregando conversas…" />
+      ) : error ? (
+        <StateView emoji="😕" title="Não consegui carregar as conversas" hint={error} action={load} />
+      ) : (
+        <ConversationList conversations={conversations} onOpen={onOpen} />
+      )}
     </div>
   );
 }
