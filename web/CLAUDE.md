@@ -81,15 +81,18 @@ Libredesk. `VITE_LIBREDESK_URL` (opcional) só pré-preenche o campo da URL.
 
 ---
 
-## Deploy (Vercel)
+## Deploy (Vercel) — JÁ NO AR
 
-1. Importe o repo no Vercel e defina **Root Directory = `web/`**.
-2. Framework detectado: Vite. Build: `npm run build`. Output: `dist`.
-3. Variável de ambiente: `VITE_LIBREDESK_URL` (opcional).
-4. Push na `main` → build e deploy automáticos.
+Demo pública: **https://omnichannel-kaisses.vercel.app** (`/?demo` entra direto).
 
-Como é monorepo, vale configurar o "Ignored Build Step" do Vercel para só
-rebuildar quando algo em `web/` mudar (evita redeploy a cada commit do bridge).
+- Projeto `omnichannel-kaisses` (time "kaisses' projects"), **conectado ao Git**:
+  todo push na `main` re-deploya sozinho.
+- O build sai do `vercel.json` na **raiz** do repo (não usa Root Directory):
+  install `npm --prefix web ci`, build `npm --prefix web run build`, output
+  `web/dist`, framework null. `.vercelignore` ancora os paths do bridge com `/`.
+- Deploy manual (se precisar): `vercel deploy --prod --yes` da raiz do repo.
+- Ver memória `reference_vercel_demo_deploy` para detalhes (ex: a Deployment
+  Protection foi desligada pra ficar público).
 
 ---
 
