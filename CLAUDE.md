@@ -130,6 +130,8 @@ omnichannel-kaisses/          # este repositório
 │   │   └── oauth.js          # /oauth/start e /oauth/callback (code→token ML/Instagram)
 │   ├── poller.js             # orquestra polling (Instagram, ML)
 │   └── index.js              # entry point
+├── scripts/
+│   └── add-account.js        # onboarding: cria ChannelAccount (npm run add-account / accounts)
 ├── test/                     # suíte automatizada — `npm test` (node --test)
 │   ├── helpers.js            # mocks e servidor HTTP efêmero compartilhados
 │   ├── poller.test.js
@@ -253,6 +255,9 @@ mesmo stack Docker Compose no desktop do dev (sem mudança de código) — ver
   (`src/webhook/oauth.js`) que trocam o `code` pelo token e persistem cifrado.
   **Falta só o end-to-end** (precisa do servidor exposto com `OAUTH_REDIRECT_URI`
   pública igual à registrada no app) — depende do VM/desktop.
+- **Onboarding de contas:** `npm run add-account` (e `npm run accounts` p/ listar)
+  — `scripts/add-account.js` cria a `ChannelAccount` cifrada; conta de OAuth nasce
+  `disconnected` e o CLI imprime o link `/oauth/start` pra conectar.
 - **PWA (Fase 9) em monorepo:** scaffold runnable em `web/` (Vite + React +
   Tailwind + vite-plugin-pwa) — `npm run build` passa. Cliente da API do
   Libredesk pronto (endpoints a validar). Deploy no Vercel com Root Directory =

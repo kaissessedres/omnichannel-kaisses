@@ -6,6 +6,8 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
+    "add-account": "node scripts/add-account.js",
+    "accounts": "node scripts/add-account.js --list",
     "test": "node --test test/*.test.js test/*/*.test.js"
   },
   "engines": {
