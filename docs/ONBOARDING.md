@@ -145,7 +145,7 @@ Todas as contas que você quer ativas devem estar `active`. WhatsApp deve estar
 > Como o PWA é HTTPS, o Libredesk também precisa estar em **HTTPS** (domínio +
 > TLS, ou o túnel do `DEPLOY-desktop.md`).
 
-**Demo (sem nada disso):** `https://omnichannel-kaisses.vercel.app/?demo` já
+**Demo (sem nada disso):** `https://kaichat-kaisses.vercel.app/?demo` já
 mostra a cara do app com dados de exemplo.
 
 ---

@@ -113,7 +113,7 @@ diretamente. Confirmar configuração de CORS no Libredesk antes da fase 9.
 ## Estrutura de pastas
 
 ```
-omnichannel-kaisses/          # este repositório
+kaichat/          # este repositório
 ├── src/
 │   ├── connectors/
 │   │   ├── index.js          # registro central (composition root) — ALL e POLLED

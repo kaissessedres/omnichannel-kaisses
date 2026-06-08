@@ -102,8 +102,8 @@ docker compose version
 ### 3.1 — Clonar o repositório
 
 ```bash
-git clone https://github.com/kaissessedres/omnichannel-kaisses.git
-cd omnichannel-kaisses
+git clone https://github.com/kaissessedres/kaichat.git
+cd kaichat
 ```
 
 ### 3.2 — Criar o arquivo .env

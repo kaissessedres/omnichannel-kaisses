@@ -83,9 +83,9 @@ Libredesk. `VITE_LIBREDESK_URL` (opcional) só pré-preenche o campo da URL.
 
 ## Deploy (Vercel) — JÁ NO AR
 
-Demo pública: **https://omnichannel-kaisses.vercel.app** (`/?demo` entra direto).
+Demo pública: **https://kaichat-kaisses.vercel.app** (`/?demo` entra direto).
 
-- Projeto `omnichannel-kaisses` (time "kaisses' projects"), **conectado ao Git**:
+- Projeto `kaichat` (time "kaisses' projects"), **conectado ao Git**:
   todo push na `main` re-deploya sozinho.
 - O build sai do `vercel.json` na **raiz** do repo (não usa Root Directory):
   install `npm --prefix web ci`, build `npm --prefix web run build`, output
