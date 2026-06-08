@@ -156,6 +156,7 @@ omnichannel-kaisses/          # este repositório
 │   ├── SDD-megachat.md
 │   ├── DEPLOY-oracle.md      # guia passo a passo do deploy no Oracle Cloud
 │   ├── DEPLOY-desktop.md     # alternativa: rodar no desktop (contornar a fila do Oracle)
+│   ├── ONBOARDING.md         # runbook: do servidor no ar até o lojista usando
 │   └── CLAUDE-pwa.md         # referência de design do PWA (hoje em web/)
 ├── nginx/
 │   └── nginx.conf            # reverse proxy (Libredesk na porta 80)
