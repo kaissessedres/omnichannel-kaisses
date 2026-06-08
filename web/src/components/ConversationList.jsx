@@ -12,7 +12,11 @@ export default function ConversationList({ conversations, onOpen }) {
   }
 
   return (
-    <ul className="divide-y divide-slate-800">
+    // Superfície translúcida (fosca) sobre o fundo texturizado: as conversas
+    // ficam num "painel" e os pontinhos do fundo não aparecem atrás delas.
+    // Como a lista só tem a altura do conteúdo, a textura aparece no espaço que
+    // sobra abaixo (ex: filtrado, com poucas conversas) — igual ao card do login.
+    <ul className="divide-y divide-slate-800/80 bg-slate-900/80 backdrop-blur-sm">
       {conversations.map((c) => {
         const name = c.contact?.name || c.meta?.sender?.name || `#${c.id}`;
         const preview = c.last_message || c.messages?.[0]?.content || '';
