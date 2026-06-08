@@ -47,8 +47,11 @@ function request(path, { method = 'GET', body } = {}) {
 }
 
 function accountPath(suffix = '') {
-  const { accountId } = getAuth();
-  return `/api/v1/accounts/${accountId}${suffix}`;
+  const auth = getAuth();
+  // Mesma checagem do request(): sem isto, getAuth() nulo estouraria com um
+  // "Cannot destructure ... of null" críptico antes de chegar lá.
+  if (!auth) throw new Error('Não autenticado — configure URL e API key do Libredesk');
+  return `/api/v1/accounts/${auth.accountId}${suffix}`;
 }
 
 // Conversas abertas (tela principal)

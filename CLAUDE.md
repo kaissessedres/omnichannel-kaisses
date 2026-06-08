@@ -259,9 +259,9 @@ mesmo stack Docker Compose no desktop do dev (sem mudança de código) — ver
   — `scripts/add-account.js` cria a `ChannelAccount` cifrada; conta de OAuth nasce
   `disconnected` e o CLI imprime o link `/oauth/start` pra conectar.
 - **PWA (Fase 9) em monorepo:** scaffold runnable em `web/` (Vite + React +
-  Tailwind + vite-plugin-pwa) — `npm run build` passa. Cliente da API do
-  Libredesk pronto (endpoints a validar). Deploy no Vercel com Root Directory =
-  `web/`. Ver `web/CLAUDE.md`.
+  Tailwind + vite-plugin-pwa) — `npm run build` passa e tem testes (Vitest:
+  cliente da API + `ChannelBadge`). Cliente da API do Libredesk pronto (endpoints
+  a validar). Deploy no Vercel com Root Directory = `web/`. Ver `web/CLAUDE.md`.
 
 ---
 

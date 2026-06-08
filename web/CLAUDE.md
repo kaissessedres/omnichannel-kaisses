@@ -75,7 +75,9 @@ Libredesk. `VITE_LIBREDESK_URL` (opcional) só pré-preenche o campo da URL.
   `*.vercel.app`). Configurar no deploy do Libredesk (Fase 3).
 - **Ícones PNG:** o manifest usa SVG (cobre Android/desktop). iOS na homescreen
   exige PNG 192x192 e 512x512 — gerar antes da Fase 11.
-- **Sem testes ainda:** o app não tem suíte; só foi verificado que builda.
+- **Testes:** `npm test` (Vitest + jsdom + Testing Library) cobre o cliente da
+  API (`src/api/libredesk.js`) e o `ChannelBadge`. Falta cobrir as páginas
+  (Inbox/Conversation) quando o fluxo com dados reais for definido.
 
 ---
 
