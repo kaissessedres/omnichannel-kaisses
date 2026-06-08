@@ -1,6 +1,6 @@
 # Deploy — Oracle Cloud Always Free
 
-> Guia passo a passo para subir todos os serviços do Megachat num único VM Oracle.
+> Guia passo a passo para subir todos os serviços do KaiChat num único VM Oracle.
 > Custo: **zero** (Always Free — não expira).
 
 ---
@@ -32,7 +32,7 @@ Oracle Cloud VM (ARM A1 Flex — 4 OCPUs, 24GB RAM)
 
 1. No menu: **Compute → Instances → Create Instance**
 2. Configurações:
-   - **Name:** `megachat-vm`
+   - **Name:** `kaichat-vm`
    - **Image:** Ubuntu 22.04 (ARM)
    - **Shape:** Ampere → `VM.Standard.A1.Flex`
    - **OCPUs:** 4 | **Memory:** 24 GB
@@ -97,7 +97,7 @@ docker compose version
 
 ---
 
-## Parte 3 — Fazer deploy do Megachat
+## Parte 3 — Fazer deploy do KaiChat
 
 ### 3.1 — Clonar o repositório
 
@@ -195,7 +195,7 @@ Todos devem estar `Up` ou `healthy`.
 
 1. Acesse `http://SEU_IP_ORACLE:8080` — painel do Evolution API
 2. Faça login com a `EVOLUTION_API_KEY` configurada
-3. Crie uma instância com o nome definido em `EVOLUTION_WA_INSTANCE` (padrão: `megachat-wa-1`)
+3. Crie uma instância com o nome definido em `EVOLUTION_WA_INSTANCE` (padrão: `kaichat-wa-1`)
 4. Escaneie o QR code com o WhatsApp do lojista
 5. Aguarde o status ficar **Connected**
 
@@ -228,7 +228,7 @@ docker compose down
 
 ## Opcional — Adicionar domínio e HTTPS
 
-Se quiser um endereço como `megachat.seudominio.com` com HTTPS:
+Se quiser um endereço como `kaichat.seudominio.com` com HTTPS:
 
 1. Aponte um subdomínio para o IP do VM (DNS A record)
 2. Instale o Certbot no VM:

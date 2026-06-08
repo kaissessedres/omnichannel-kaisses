@@ -12,7 +12,7 @@ import StateView from '../components/StateView.jsx';
 const POLL_MS = 15000; // auto-refresh da lista
 
 function alertsInitial() {
-  try { return localStorage.getItem('megachat.alerts') !== '0'; } catch { return true; }
+  try { return localStorage.getItem('kaichat.alerts') !== '0'; } catch { return true; }
 }
 
 // Tela principal: conversas abertas, com abas por conta, filtro por categoria e
@@ -67,7 +67,7 @@ export default function Inbox({ onOpen, onLogout }) {
   function toggleAlerts() {
     setAlerts((on) => {
       const next = !on;
-      try { localStorage.setItem('megachat.alerts', next ? '1' : '0'); } catch { /* ignore */ }
+      try { localStorage.setItem('kaichat.alerts', next ? '1' : '0'); } catch { /* ignore */ }
       if (next) requestNotificationPermission();
       return next;
     });

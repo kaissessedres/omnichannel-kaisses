@@ -39,7 +39,7 @@ test.beforeEach(() => {
   accountId = seedAccount(db, {
     channel_type: 'whatsapp',
     account_label: 'WhatsApp Loja',
-    evolution_instance_id: 'megachat-wa-1',
+    evolution_instance_id: 'kaichat-wa-1',
     libredesk_inbox_id: 7,
   });
 });
@@ -47,7 +47,7 @@ test.beforeEach(() => {
 function evolutionEvent(overrides = {}) {
   return {
     event: 'messages.upsert',
-    instance: 'megachat-wa-1',
+    instance: 'kaichat-wa-1',
     data: {
       key: { remoteJid: '5511999999999@s.whatsapp.net', fromMe: false },
       message: { conversation: 'Olá, vocês têm o produto X?' },

@@ -27,7 +27,7 @@ describe('auth (localStorage)', () => {
   });
 
   it('getAuth devolve null quando o localStorage tem JSON inválido', () => {
-    localStorage.setItem('megachat.auth', 'isto-não-é-json');
+    localStorage.setItem('kaichat.auth', 'isto-não-é-json');
     expect(getAuth()).toBeNull();
   });
 });

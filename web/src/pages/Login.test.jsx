@@ -16,7 +16,7 @@ function fill(container, { url, key }) {
 describe('Login', () => {
   it('mostra o título e os campos principais', () => {
     render(<Login onAuthed={() => {}} />);
-    expect(screen.getByRole('heading', { name: 'Megachat' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'KaiChat' })).toBeTruthy();
     expect(screen.getByPlaceholderText('https://...')).toBeTruthy();
   });
 
@@ -44,7 +44,7 @@ describe('Login', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Entrar' }));
 
     await waitFor(() => expect(onAuthed).toHaveBeenCalledOnce());
-    expect(JSON.parse(localStorage.getItem('megachat.auth')).url).toBe('https://ld.example');
+    expect(JSON.parse(localStorage.getItem('kaichat.auth')).url).toBe('https://ld.example');
   });
 
   it('"Ver demonstração" entra sem conta e liga o modo demo', () => {
@@ -52,7 +52,7 @@ describe('Login', () => {
     render(<Login onAuthed={onAuthed} />);
     fireEvent.click(screen.getByRole('button', { name: /ver demonstração/i }));
     expect(onAuthed).toHaveBeenCalledOnce();
-    expect(localStorage.getItem('megachat.demo')).toBe('1');
+    expect(localStorage.getItem('kaichat.demo')).toBe('1');
   });
 
   it('quando a conexão falha, mostra erro e oferece "Entrar mesmo assim"', async () => {

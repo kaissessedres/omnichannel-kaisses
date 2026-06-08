@@ -6,7 +6,7 @@
 
 process.env.DB_PATH = ':memory:';
 process.env.ENCRYPTION_KEY = 'a'.repeat(64);
-process.env.OAUTH_REDIRECT_URI = 'https://megachat.example/oauth/callback';
+process.env.OAUTH_REDIRECT_URI = 'https://kaichat.example/oauth/callback';
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -67,7 +67,7 @@ test('/callback troca o code, persiste as credenciais cifradas e ativa a conta',
     assert.match(await res.text(), /conectada/i);
   });
 
-  assert.deepEqual(receivedArgs, { code: 'the-code', redirectUri: 'https://megachat.example/oauth/callback' });
+  assert.deepEqual(receivedArgs, { code: 'the-code', redirectUri: 'https://kaichat.example/oauth/callback' });
   const account = queries.getAccountById(id);
   assert.equal(account.status, 'active');
   assert.deepEqual(getCredentials(account), { access_token: 'AT', refresh_token: 'RT', seller_id: '777' });
@@ -103,7 +103,7 @@ test('/callback responde 502 e mantém a conta inativa quando a troca falha', as
 test('/start redireciona (302) para a URL de autorização do canal da conta', async () => {
   const id = seedDisconnectedML();
   await withMockMethod(mercadolivre, 'getAuthUrl', (redirectUri, state) => {
-    assert.equal(redirectUri, 'https://megachat.example/oauth/callback');
+    assert.equal(redirectUri, 'https://kaichat.example/oauth/callback');
     assert.equal(state, String(id));
     return 'https://auth.mercadolibre.com/authorization?x=1';
   }, async () => {

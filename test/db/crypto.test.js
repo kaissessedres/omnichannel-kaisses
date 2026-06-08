@@ -1,6 +1,6 @@
 // Testa src/db/crypto.js — a criptografia simétrica (AES-256-GCM) usada no
 // campo ChannelAccount.credentials (ver "Por que criptografar credentials?"
-// em docs/ERD-megachat.md). Gera sua própria ENCRYPTION_KEY de teste — não
+// em docs/ERD-kaichat.md). Gera sua própria ENCRYPTION_KEY de teste — não
 // depende de segredo real nem de banco.
 
 const test = require('node:test');

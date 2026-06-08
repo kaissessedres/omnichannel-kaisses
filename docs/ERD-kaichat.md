@@ -1,4 +1,4 @@
-# ERD — Megachat Bridge Service
+# ERD — KaiChat Bridge Service
 **Versão:** 0.4  
 **Changelog:**
 - v0.6 — Fluxo OAuth de ponta implementado em código (`getAuthUrl`/`exchangeCode` ML+Instagram + rotas `/oauth/*`); renovação proativa do token do Instagram. Falta só o end-to-end (servidor exposto)

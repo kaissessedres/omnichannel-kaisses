@@ -1,4 +1,4 @@
-name: Tentar criar VM Oracle (megachat-vm)
+name: Tentar criar VM Oracle (kaichat-vm)
 
 # Tenta criar o VM A1 Flex periodicamente até a Oracle liberar capacidade
 # na região (erro comum do Always Free: "Out of host capacity").
@@ -38,7 +38,7 @@ jobs:
         run: |
           EXISTING_ID=$(oci compute instance list \
             --compartment-id "${{ secrets.OCI_TENANCY_OCID }}" \
-            --display-name "megachat-vm" \
+            --display-name "kaichat-vm" \
             --lifecycle-state RUNNING \
             --query "data[0].id" --raw-output 2>/dev/null)
           if [ -n "$EXISTING_ID" ] && [ "$EXISTING_ID" != "null" ]; then
@@ -62,7 +62,7 @@ jobs:
           OUTPUT=$(oci compute instance launch \
             --compartment-id "${{ secrets.OCI_TENANCY_OCID }}" \
             --availability-domain "${{ secrets.OCI_AD }}" \
-            --display-name "megachat-vm" \
+            --display-name "kaichat-vm" \
             --shape "VM.Standard.A1.Flex" \
             --shape-config '{"ocpus": 4, "memoryInGBs": 24}' \
             --image-id "${{ secrets.OCI_IMAGE_ID }}" \
@@ -102,11 +102,11 @@ jobs:
 
           gh issue create \
             --repo "${{ github.repository }}" \
-            --title "VM megachat-vm criado com sucesso" \
+            --title "VM kaichat-vm criado com sucesso" \
             --body "Instance ID: \`${{ steps.launch.outputs.instance_id }}\`
           IP público: \`$IP\`
 
-          Acesso via SSH: \`ssh -i ~/.ssh/megachat_vm ubuntu@$IP\`
+          Acesso via SSH: \`ssh -i ~/.ssh/kaichat_vm ubuntu@$IP\`
 
           Próximo passo: seguir a Parte 2 do docs/DEPLOY-oracle.md.
           Depois disso, **desabilite este workflow** em Settings → Actions → Workflows."

@@ -1,4 +1,4 @@
-# PRD — Megachat Omnichannel Bridge
+# PRD — KaiChat Omnichannel Bridge
 **Versão:** 0.3  
 **Autor:** a definir  
 **Status:** Em revisão  

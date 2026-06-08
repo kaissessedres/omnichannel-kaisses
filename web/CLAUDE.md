@@ -1,6 +1,6 @@
-# CLAUDE.md — megachat-pwa (pasta `web/` do monorepo)
+# CLAUDE.md — kaichat-pwa (pasta `web/` do monorepo)
 
-> Frontend mobile do Megachat. Vive em `web/` deste repositório (monorepo) e é
+> Frontend mobile do KaiChat. Vive em `web/` deste repositório (monorepo) e é
 > publicado no Vercel apontando o **Root Directory** para `web/`. O backend
 > (bridge Node + Libredesk) fica na raiz do repo e roda no Oracle Cloud.
 > Referência de design original: `../docs/CLAUDE-pwa.md`.

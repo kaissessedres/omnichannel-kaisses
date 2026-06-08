@@ -1,5 +1,5 @@
 {
-  "name": "megachat-bridge",
+  "name": "kaichat-bridge",
   "version": "1.0.0",
   "description": "Bridge service that centralizes WhatsApp, Instagram, Mercado Livre and Shopee messages into Libredesk",
   "main": "src/index.js",

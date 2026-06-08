@@ -178,7 +178,7 @@ test('createAccount grava credentials NULL para conta sem token (WhatsApp)', () 
   const { lastInsertRowid } = queries.createAccount({
     channelType: 'whatsapp',
     accountLabel: 'WhatsApp Loja',
-    evolutionInstanceId: 'megachat-wa-1',
+    evolutionInstanceId: 'kaichat-wa-1',
     libredeskInboxId: 1,
   });
 

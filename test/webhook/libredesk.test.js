@@ -59,7 +59,7 @@ test.beforeEach(() => {
   accountId = seedAccount(db, {
     channel_type: 'whatsapp',
     account_label: 'WhatsApp Loja',
-    evolution_instance_id: 'megachat-wa-1',
+    evolution_instance_id: 'kaichat-wa-1',
     libredesk_inbox_id: 7,
   });
   const { lastInsertRowid } = queries.createMapping({
@@ -119,7 +119,7 @@ test('reply "outgoing" com mapeamento conhecido é roteado pro conector certo', 
   const [{ mapping, externalId, content }] = calls;
   assert.equal(mapping.id, mappingId);
   assert.equal(mapping.channel_type, 'whatsapp');
-  assert.equal(mapping.evolution_instance_id, 'megachat-wa-1');
+  assert.equal(mapping.evolution_instance_id, 'kaichat-wa-1');
   assert.equal(externalId, EXTERNAL_CONVERSATION_ID);
   assert.equal(content, 'Já estamos preparando seu pedido!');
 });

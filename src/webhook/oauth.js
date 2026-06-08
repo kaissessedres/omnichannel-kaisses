@@ -61,7 +61,7 @@ router.get('/callback', async (req, res) => {
     saveCredentials(account.id, credentials);
     setAccountStatus(account.id, 'active');
     console.log(`[oauth] Conta ${account.id} (${account.channel_type}) conectada`);
-    return res.send('Conta conectada! Pode fechar esta aba e voltar ao Megachat.');
+    return res.send('Conta conectada! Pode fechar esta aba e voltar ao KaiChat.');
   } catch (err) {
     console.error('[oauth] Erro no callback:', err.message);
     return res.status(502).send(`Falha ao conectar: ${err.message}`);

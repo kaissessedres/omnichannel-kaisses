@@ -6,7 +6,7 @@
 //
 // Uso:
 //   npm run add-account -- --type mercadolivre --label "ML Conta 1" --inbox 3
-//   npm run add-account -- --type whatsapp --label "WhatsApp" --inbox 7 --instance megachat-wa-1
+//   npm run add-account -- --type whatsapp --label "WhatsApp" --inbox 7 --instance kaichat-wa-1
 //   npm run add-account -- --type instagram --label "IG" --inbox 5 --access-token <token>
 //   npm run accounts            # lista as contas cadastradas
 
@@ -69,7 +69,7 @@ function resolveAccountArgs(values) {
 }
 
 function usage() {
-  console.log(`Onboarding de contas do Megachat
+  console.log(`Onboarding de contas do KaiChat
 
   npm run add-account -- --type <canal> --label <nome> --inbox <id> [opções]
   npm run accounts                 lista as contas cadastradas

@@ -10,7 +10,7 @@
 
 import { isDemo, disableDemo, demoConversations, demoMessages, demoSend, demoMarkRead, demoSetCategory } from './demo.js';
 
-const STORAGE_KEY = 'megachat.auth';
+const STORAGE_KEY = 'kaichat.auth';
 
 // Autenticação fica no localStorage (ver "Autenticação" em docs/CLAUDE-pwa.md):
 // a tela de login guarda URL + API key + accountId do Libredesk. Não há backend

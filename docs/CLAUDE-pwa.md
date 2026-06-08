@@ -1,11 +1,11 @@
-# CLAUDE.md — megachat-pwa
+# CLAUDE.md — kaichat-pwa
 
 > ℹ️ **Decisão atualizada:** o PWA passou a viver **neste mesmo repositório**, na
 > pasta `web/` (monorepo) — não num repo separado. As instruções vivas estão em
 > `web/CLAUDE.md`. Este documento permanece como **referência de design** (o
 > "porquê" das escolhas) e segue válido; só o local da implementação mudou.
 >
-> Onde se lê "este repo"/"megachat-pwa" abaixo, leia "a pasta `web/`".
+> Onde se lê "este repo"/"kaichat-pwa" abaixo, leia "a pasta `web/`".
 
 ---
 
@@ -15,7 +15,7 @@ Frontend mobile PWA em React, hospedado no Vercel. Interface que o lojista
 usa pelo celular para ler e responder mensagens de todos os canais
 (WhatsApp, Instagram, Mercado Livre, Shopee) em um único lugar.
 
-Faz parte do sistema "Megachat" — este repo é a camada de apresentação.
+Faz parte do sistema "KaiChat" — este repo é a camada de apresentação.
 Não processa mensagens nem faz polling — consome a API do Libredesk diretamente.
 
 ---
@@ -63,7 +63,7 @@ fica na homescreen, tem ícone, funciona como app no browser.
 ## Estrutura de pastas
 
 ```
-megachat-pwa/
+kaichat-pwa/
 ├── src/
 │   ├── api/
 │   │   └── libredesk.js          # todas as chamadas à API do Libredesk
@@ -128,7 +128,7 @@ Consultar: https://libredesk.io/docs ou o Swagger da instância (no VM Oracle Cl
 
 ## Aviso de CORS
 
-O PWA chama a API do Libredesk de um domínio Vercel (ex: megachat-pwa.vercel.app).
+O PWA chama a API do Libredesk de um domínio Vercel (ex: kaichat-pwa.vercel.app).
 O Libredesk precisa ter CORS configurado para aceitar esse domínio.
 Verificar/configurar isso na Fase 3 (deploy do Libredesk), antes de iniciar este repo.
 
@@ -154,7 +154,7 @@ Variáveis de ambiente no dashboard Vercel:
 ## Fase atual do projeto
 
 - [x] Documentação (PRD, ERD, SDD)
-- [ ] Fases 1-8 — Bridge Service (repo megachat-bridge, concluir primeiro)
+- [ ] Fases 1-8 — Bridge Service (repo kaichat-bridge, concluir primeiro)
 - [ ] **Fase 9 — Este repo** ← começa aqui depois do bridge funcionar
 - [ ] Fase 11 — Testes end-to-end
 
@@ -162,6 +162,6 @@ Variáveis de ambiente no dashboard Vercel:
 
 ## Repositório relacionado
 
-`megachat-bridge` — bridge Node.js no Oracle Cloud (Docker Compose).
+`kaichat-bridge` — bridge Node.js no Oracle Cloud (Docker Compose).
 Alimenta o Libredesk com mensagens dos canais externos.
 Este PWA não depende do bridge diretamente — só do Libredesk estar no ar.

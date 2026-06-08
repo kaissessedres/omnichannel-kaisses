@@ -1,4 +1,4 @@
-# CLAUDE.md — megachat-bridge
+# CLAUDE.md — kaichat-bridge
 
 > Este arquivo é lido automaticamente pelo Claude Code a cada sessão.
 > Mantê-lo atualizado é responsabilidade do desenvolvedor.
@@ -9,7 +9,7 @@
 
 Bridge service em Node.js que centraliza mensagens de WhatsApp, Instagram,
 Mercado Livre e Shopee num único inbox (Libredesk). Faz parte do sistema
-"Megachat" — solução omnichannel para um lojista de artigos personalizados
+"KaiChat" — solução omnichannel para um lojista de artigos personalizados
 que opera sozinho e precisa responder todos os canais pelo celular.
 
 ---
@@ -151,9 +151,9 @@ omnichannel-kaisses/          # este repositório
 │       ├── libredesk.test.js
 │       └── oauth.test.js
 ├── docs/
-│   ├── PRD-megachat.md
-│   ├── ERD-megachat.md
-│   ├── SDD-megachat.md
+│   ├── PRD-kaichat.md
+│   ├── ERD-kaichat.md
+│   ├── SDD-kaichat.md
 │   ├── DEPLOY-oracle.md      # guia passo a passo do deploy no Oracle Cloud
 │   ├── DEPLOY-desktop.md     # alternativa: rodar no desktop (contornar a fila do Oracle)
 │   ├── ONBOARDING.md         # runbook: do servidor no ar até o lojista usando
@@ -176,7 +176,7 @@ omnichannel-kaisses/          # este repositório
 **ConversationMapping** — mapeia ID externo → ID conversa no Libredesk (evita duplicatas)
 **SyncState** — controla polling por conta (último ID processado, erros consecutivos)
 
-Schema completo: ver `src/db/schema.js` ou `docs/ERD-megachat.md`
+Schema completo: ver `src/db/schema.js` ou `docs/ERD-kaichat.md`
 
 ---
 
@@ -213,7 +213,7 @@ o mesmo papel:
 WhatsApp não implementa `fetchNewMessages` — recebe via webhook do Evolution
 API, então esse método nunca seria chamado nele. Forçar uma implementação vazia
 só para "cumprir a interface" é o tipo de violação de Interface Segregation que
-preferimos evitar (ver `docs/SDD-megachat.md` seção 3.1 para mais contexto).
+preferimos evitar (ver `docs/SDD-kaichat.md` seção 3.1 para mais contexto).
 
 ---
 

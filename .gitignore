@@ -149,3 +149,4 @@ vite.config.ts.timestamp-*
 
 # Claude Code — settings locais (pessoais, não compartilhados)
 .claude/settings.local.json
+.vercel

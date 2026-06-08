@@ -2,7 +2,7 @@ const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');
 
-const DB_PATH = process.env.DB_PATH || path.join(process.cwd(), 'data', 'megachat.db');
+const DB_PATH = process.env.DB_PATH || path.join(process.cwd(), 'data', 'kaichat.db');
 
 let db;
 

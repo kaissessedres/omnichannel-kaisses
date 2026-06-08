@@ -1,9 +1,9 @@
 {
-  "name": "megachat-pwa",
+  "name": "kaichat-pwa",
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Frontend mobile PWA do Megachat — lê e responde conversas do Libredesk pelo celular",
+  "description": "Frontend mobile PWA do KaiChat — lê e responde conversas do Libredesk pelo celular",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

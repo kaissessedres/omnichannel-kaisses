@@ -1,4 +1,4 @@
-# Megachat — túnel Cloudflare (deploy desktop, Nível B)
+# KaiChat — túnel Cloudflare (deploy desktop, Nível B)
 #
 # OPT-IN: este arquivo NÃO sobe sozinho. Some-o ao stack só quando for expor o
 # Libredesk com HTTPS pública (PWA pelo celular fora de casa + callbacks OAuth):

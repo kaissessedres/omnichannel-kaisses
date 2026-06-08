@@ -1,6 +1,6 @@
 # Deploy — Desktop como servidor (contornar a fila do Oracle)
 
-> Guia para subir todos os serviços do Megachat no **seu PC**, em vez de (ou
+> Guia para subir todos os serviços do KaiChat no **seu PC**, em vez de (ou
 > antes de) o VM Oracle. Serve para destravar a Fase 3 enquanto a Oracle está
 > "Out of host capacity". Custo: zero (sua máquina + energia).
 >
@@ -135,7 +135,7 @@ Igual ao guia do Oracle, só que pelo **localhost**:
 
 1. Abra `http://localhost:8080` — painel do Evolution API.
 2. Login com a `EVOLUTION_API_KEY` do `.env`.
-3. Crie a instância com o nome de `EVOLUTION_WA_INSTANCE` (padrão `megachat-wa-1`).
+3. Crie a instância com o nome de `EVOLUTION_WA_INSTANCE` (padrão `kaichat-wa-1`).
 4. Escaneie o QR code com o WhatsApp do lojista. Aguarde **Connected**.
 
 Pronto: com isso o WhatsApp já entra no Libredesk e as Fases 5/6 podem ser
@@ -177,10 +177,10 @@ do repo) — é opt-in, não sobe sozinho. Você só precisa do token e de subir
 dois arquivos:
 
 1. No painel **Cloudflare Zero Trust → Networks → Tunnels → Create a tunnel**.
-2. Escolha **Cloudflared**, dê um nome (ex: `megachat`), copie o **token**.
+2. Escolha **Cloudflared**, dê um nome (ex: `kaichat`), copie o **token**.
 3. Ponha o token no `.env`: `CLOUDFLARE_TUNNEL_TOKEN=...`
 4. No painel do túnel, em **Public Hostnames**, aponte
-   `megachat.seudominio.com` → **Service** `http://nginx:80`.
+   `kaichat.seudominio.com` → **Service** `http://nginx:80`.
 5. Suba o stack **com o arquivo do túnel** somado ao base:
 
    ```bash
@@ -189,7 +189,7 @@ dois arquivos:
 
    (O Nível A local continua com o `docker compose up -d` normal, sem túnel.)
 
-Agora o Libredesk está em `https://megachat.seudominio.com` com HTTPS válido.
+Agora o Libredesk está em `https://kaichat.seudominio.com` com HTTPS válido.
 
 ### 4.3 — Apontar o PWA (Vercel) e liberar CORS
 

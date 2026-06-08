@@ -11,7 +11,7 @@ export default {
     logs: false,
     themes: [
       {
-        megachat: {
+        kaichat: {
           primary: '#6366f1',          // indigo-500
           'primary-content': '#ffffff',
           secondary: '#475569',        // slate-600

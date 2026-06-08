@@ -10,13 +10,13 @@ process.env.EVOLUTION_API_KEY = 'test-key';
 const whatsapp = require('../../src/connectors/whatsapp');
 const { withMockFetch } = require('../helpers');
 
-const account = { evolution_instance_id: 'megachat-wa-1' };
+const account = { evolution_instance_id: 'kaichat-wa-1' };
 
 test('init resolve quando a instância existe na Evolution API', async () => {
   await withMockFetch(async (url, opts) => {
     assert.equal(url, 'http://evolution.test/instance/fetchInstances');
     assert.equal(opts.headers.apikey, 'test-key');
-    return { ok: true, json: async () => [{ instance: { instanceName: 'megachat-wa-1' } }] };
+    return { ok: true, json: async () => [{ instance: { instanceName: 'kaichat-wa-1' } }] };
   }, async () => {
     await assert.doesNotReject(() => whatsapp.init(account));
   });
@@ -39,7 +39,7 @@ test('init rejeita quando a Evolution API está inacessível', async () => {
 
 test('sendMessage faz POST em /message/sendText/{instance} com number e text', async () => {
   await withMockFetch(async (url, opts) => {
-    assert.equal(url, 'http://evolution.test/message/sendText/megachat-wa-1');
+    assert.equal(url, 'http://evolution.test/message/sendText/kaichat-wa-1');
     assert.equal(opts.method, 'POST');
     assert.deepEqual(JSON.parse(opts.body), { number: '5511999999999', text: 'Olá!' });
     return { ok: true, json: async () => ({ status: 'sent' }) };
@@ -60,7 +60,7 @@ test('sendMessage propaga erro quando a Evolution API recusa o envio', async () 
 
 test('getContact devolve o nome do perfil quando a Evolution API responde', async () => {
   await withMockFetch(async (url, opts) => {
-    assert.equal(url, 'http://evolution.test/chat/fetchProfile/megachat-wa-1');
+    assert.equal(url, 'http://evolution.test/chat/fetchProfile/kaichat-wa-1');
     assert.deepEqual(JSON.parse(opts.body), { number: '5511999999999' });
     return { ok: true, json: async () => ({ name: 'Cliente Fulano' }) };
   }, async () => {

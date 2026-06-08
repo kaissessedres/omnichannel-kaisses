@@ -2,7 +2,7 @@
 // backend nenhum (tipo um protótipo). Ativado pelo botão "Ver demonstração" no
 // login; o cliente da API (libredesk.js) desvia para estes dados quando isDemo().
 
-const KEY = 'megachat.demo';
+const KEY = 'kaichat.demo';
 
 export function isDemo() {
   try {

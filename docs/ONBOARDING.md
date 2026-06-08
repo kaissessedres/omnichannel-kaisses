@@ -81,10 +81,10 @@ Ele cria a `ChannelAccount` (credenciais **cifradas**). Conta de OAuth nasce
 ### 3.1 WhatsApp (via Evolution + QR)
 ```bash
 docker compose exec bridge npm run add-account -- \
-  --type whatsapp --label "WhatsApp" --inbox <ID> --instance megachat-wa-1
+  --type whatsapp --label "WhatsApp" --inbox <ID> --instance kaichat-wa-1
 ```
 Depois: abra `http://SEU-IP:8080` (Evolution), crie a instância
-`megachat-wa-1`, **escaneie o QR** com o celular da loja → status **Connected**.
+`kaichat-wa-1`, **escaneie o QR** com o celular da loja → status **Connected**.
 
 **Deu certo?** Mande uma mensagem de um outro número pro WhatsApp da loja →
 aparece uma conversa nova no Libredesk.
@@ -168,4 +168,4 @@ mostra a cara do app com dados de exemplo.
 | Fluxo OAuth | `src/webhook/oauth.js` |
 | Variáveis | `.env.example` |
 | PWA (deploy/uso) | `web/CLAUDE.md` |
-| Visão geral / avisos | `CLAUDE.md`, `docs/SDD-megachat.md` |
+| Visão geral / avisos | `CLAUDE.md`, `docs/SDD-kaichat.md` |

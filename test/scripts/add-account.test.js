@@ -34,11 +34,11 @@ test('ML com tokens semeados → status active, sem OAuth, credenciais preenchid
 
 test('WhatsApp → status active com a instância do Evolution, sem credenciais', () => {
   const { input, needsOAuth } = resolveAccountArgs({
-    type: 'whatsapp', label: 'WhatsApp', inbox: '7', instance: 'megachat-wa-1',
+    type: 'whatsapp', label: 'WhatsApp', inbox: '7', instance: 'kaichat-wa-1',
   });
   assert.equal(input.status, 'active');
   assert.equal(needsOAuth, false);
-  assert.equal(input.evolutionInstanceId, 'megachat-wa-1');
+  assert.equal(input.evolutionInstanceId, 'kaichat-wa-1');
   assert.deepEqual(input.credentials, {});
 });
 

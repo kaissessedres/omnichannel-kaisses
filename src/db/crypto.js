@@ -1,5 +1,5 @@
 // Criptografia simétrica do campo ChannelAccount.credentials — ver
-// docs/ERD-megachat.md ("Por que criptografar credentials?"): tokens OAuth
+// docs/ERD-kaichat.md ("Por que criptografar credentials?"): tokens OAuth
 // de Mercado Livre, Instagram e Shopee não podem ficar em texto plano no
 // SQLite. AES-256-GCM autentica o conteúdo (detecta adulteração via authTag)
 // e a chave vem de ENCRYPTION_KEY — gere com `openssl rand -hex 32`

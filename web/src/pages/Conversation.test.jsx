@@ -9,7 +9,7 @@ afterEach(() => {
 });
 
 function auth() {
-  localStorage.setItem('megachat.auth', JSON.stringify({ url: 'https://ld', apiKey: 'k', accountId: '1' }));
+  localStorage.setItem('kaichat.auth', JSON.stringify({ url: 'https://ld', apiKey: 'k', accountId: '1' }));
 }
 
 describe('Conversation', () => {

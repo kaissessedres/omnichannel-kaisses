@@ -12,8 +12,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg'],
       manifest: {
-        name: 'Megachat',
-        short_name: 'Megachat',
+        name: 'KaiChat',
+        short_name: 'KaiChat',
         description: 'Inbox omnichannel da loja — WhatsApp, Instagram, Mercado Livre e Shopee',
         theme_color: '#0f172a',
         background_color: '#0f172a',

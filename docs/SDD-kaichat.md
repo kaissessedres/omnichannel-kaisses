@@ -1,4 +1,4 @@
-# SDD — Software Design Document: Megachat Bridge
+# SDD — Software Design Document: KaiChat Bridge
 **Versão:** 0.5  
 **Changelog:**
 - v0.6 — Seção 6.1: fluxo OAuth de ponta implementado em código (rotas `/oauth/start` e `/oauth/callback` + `getAuthUrl`/`exchangeCode` ML+Instagram) e renovação proativa do token do Instagram; falta só o end-to-end (servidor exposto)
@@ -54,7 +54,7 @@ WhatsApp | Instagram | Mercado Livre x2 | Shopee x2
 ### 2.1 Estrutura de pastas
 
 ```
-megachat-bridge/
+kaichat-bridge/
 ├── src/
 │   ├── connectors/
 │   │   ├── index.js          # registro central (composition root) — ALL e POLLED
@@ -220,7 +220,7 @@ LIBREDESK_API_KEY=xxxx
 # Evolution API (WhatsApp) — também URL interna da rede Docker em produção
 EVOLUTION_API_URL=http://evolution:8080
 EVOLUTION_API_KEY=xxxx
-EVOLUTION_WA_INSTANCE=megachat-wa-1   # nome da instância no Evolution API
+EVOLUTION_WA_INSTANCE=kaichat-wa-1   # nome da instância no Evolution API
 
 # Encryption (cifra os tokens de ML, Instagram, Shopee no banco — AES-256-GCM)
 # 32 bytes em hex (64 caracteres). Gere com: openssl rand -hex 32
@@ -342,8 +342,8 @@ Oracle Cloud VM (A1 Flex — Always Free)
     ├── evolution-api  (porta 8080 — exposta só durante setup QR code)
     └── bridge         (porta 3000 interna — webhooks via rede Docker)
 
-Vercel Project: megachat-pwa
-└── megachat-pwa      (React/Vite — deploy automático a cada push na branch main)
+Vercel Project: kaichat-pwa
+└── kaichat-pwa      (React/Vite — deploy automático a cada push na branch main)
 ```
 
 Guia completo de setup: `docs/DEPLOY-oracle.md`
@@ -400,7 +400,7 @@ docker compose up -d --build bridge
 ### 9.1 Estrutura de pastas
 
 ```
-megachat-pwa/
+kaichat-pwa/
 ├── src/
 │   ├── api/
 │   │   └── libredesk.js      # cliente HTTP para a API do Libredesk
@@ -457,4 +457,4 @@ PATCH /api/v1/accounts/{id}/conversations/{conv_id}
 - Funciona offline para leitura de conversas já carregadas (service worker)
 - Tema de cor configurado no manifest.json (status bar do celular)
 
-*Documentos relacionados: PRD-megachat.md, ERD-megachat.md*
+*Documentos relacionados: PRD-kaichat.md, ERD-kaichat.md*

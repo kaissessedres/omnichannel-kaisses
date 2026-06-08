@@ -47,7 +47,7 @@ export default function Login({ onAuthed }) {
       <form onSubmit={submit} className="w-full max-w-sm space-y-5 rounded-2xl bg-slate-800 p-6 text-slate-100 shadow-xl">
         <header className="flex flex-col items-center gap-2 text-center">
           <img src="/icons/icon.svg" alt="" className="h-14 w-14" />
-          <h1 className="text-2xl font-semibold">Megachat</h1>
+          <h1 className="text-2xl font-semibold">KaiChat</h1>
           <p className="text-sm text-slate-400">Seu inbox de todos os canais, num só lugar.</p>
         </header>
 
