@@ -18,31 +18,58 @@ function getToken(channelAccount) {
   return creds.access_token || process.env.INSTAGRAM_ACCESS_TOKEN;
 }
 
-// Troca o token de longa duração por um novo (estende ~60 dias) e persiste o
-// token novo + expires_at cifrados. Exige META_APP_ID/SECRET. Devolve as creds
-// atualizadas.
-async function refreshLongLivedToken(channelAccount) {
-  const creds = getCredentials(channelAccount);
+function metaCreds() {
   const appId = process.env.META_APP_ID;
   const appSecret = process.env.META_APP_SECRET;
-  if (!appId || !appSecret) {
-    throw new Error('META_APP_ID/META_APP_SECRET ausentes — não dá pra renovar o token do Instagram');
-  }
+  if (!appId || !appSecret) throw new Error('META_APP_ID/META_APP_SECRET ausentes — configure o app da Meta');
+  return { appId, appSecret };
+}
 
+// Troca um token (curto ou longo) por um de longa duração (~60d) via grant
+// fb_exchange_token. Devolve { access_token, expires_at } — não persiste.
+async function fbExchangeToken(token) {
+  const { appId, appSecret } = metaCreds();
   const url = `${GRAPH_URL}/oauth/access_token?grant_type=fb_exchange_token`
-    + `&client_id=${appId}&client_secret=${appSecret}`
-    + `&fb_exchange_token=${encodeURIComponent(creds.access_token)}`;
+    + `&client_id=${appId}&client_secret=${appSecret}&fb_exchange_token=${encodeURIComponent(token)}`;
   const res = await fetch(url);
-  if (!res.ok) throw new Error(`Instagram refresh de token falhou: ${res.status} ${await res.text()}`);
+  if (!res.ok) throw new Error(`Instagram exchange de token falhou: ${res.status} ${await res.text()}`);
   const data = await res.json(); // { access_token, token_type, expires_in }
-
-  const updated = {
-    ...creds,
+  return {
     access_token: data.access_token,
     expires_at: data.expires_in ? Date.now() + data.expires_in * 1000 : null,
   };
+}
+
+// Renova o token de longa duração (troca o atual por outro de ~60d) e persiste
+// o novo + expires_at cifrados. Devolve as creds atualizadas.
+async function refreshLongLivedToken(channelAccount) {
+  const creds = getCredentials(channelAccount);
+  const updated = { ...creds, ...(await fbExchangeToken(creds.access_token)) };
   if (channelAccount.id) saveCredentials(channelAccount.id, updated);
   return updated;
+}
+
+// URL pra onde o lojista é mandado pra autorizar a conta (1ª etapa do OAuth).
+// O `state` volta no callback e identifica qual ChannelAccount está conectando.
+function getAuthUrl(redirectUri, state) {
+  const { appId } = metaCreds();
+  const scope = 'pages_messaging,pages_manage_metadata,instagram_basic,instagram_manage_messages';
+  return 'https://www.facebook.com/v19.0/dialog/oauth'
+    + `?client_id=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}`
+    + `&state=${encodeURIComponent(state)}&response_type=code&scope=${encodeURIComponent(scope)}`;
+}
+
+// Troca o `code` do redirect pelo token: primeiro o de curta duração, depois o
+// de longa (~60d). Devolve { access_token, expires_at } em texto plano — quem
+// chama persiste cifrado via saveCredentials.
+async function exchangeCode(code, redirectUri) {
+  const { appId, appSecret } = metaCreds();
+  const url = `${GRAPH_URL}/oauth/access_token?client_id=${appId}&client_secret=${appSecret}`
+    + `&redirect_uri=${encodeURIComponent(redirectUri)}&code=${encodeURIComponent(code)}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Instagram authorize falhou: ${res.status} ${await res.text()}`);
+  const short = await res.json(); // { access_token, expires_in }
+  return fbExchangeToken(short.access_token); // curto → longo
 }
 
 // Renova proativamente e devolve o token a usar agora. Pula quando não dá pra
@@ -120,4 +147,4 @@ async function getContact(channelAccount, contactId) {
   return { name: data.name || contactId, identifier: contactId };
 }
 
-module.exports = { init, fetchNewMessages, sendMessage, getContact, refreshLongLivedToken };
+module.exports = { init, fetchNewMessages, sendMessage, getContact, refreshLongLivedToken, getAuthUrl, exchangeCode };

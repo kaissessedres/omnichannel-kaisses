@@ -19,6 +19,12 @@ function getAccountById(id) {
   return getDb().prepare('SELECT * FROM ChannelAccount WHERE id = ?').get(id);
 }
 
+// Atualiza o status da conta ('active' | 'disconnected' | 'error'). Usado pelo
+// fluxo OAuth para marcar a conta como ativa assim que os tokens são salvos.
+function setAccountStatus(channelAccountId, status) {
+  getDb().prepare('UPDATE ChannelAccount SET status = ? WHERE id = ?').run(status, channelAccountId);
+}
+
 // Atualiza (cifrado) as credenciais de uma conta existente. Usado quando o
 // token OAuth é rotacionado — ex: o conector ML troca o access_token expirado e
 // recebe um refresh_token novo (single-use) que PRECISA ser persistido, senão o
@@ -103,6 +109,7 @@ function updateLastSynced(channelAccountId) {
 module.exports = {
   createAccount,
   getAccountById,
+  setAccountStatus,
   saveCredentials,
   findMapping,
   createMapping,

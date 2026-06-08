@@ -1,6 +1,7 @@
 # SDD — Software Design Document: Megachat Bridge
 **Versão:** 0.5  
 **Changelog:**
+- v0.6 — Seção 6.1: fluxo OAuth de ponta implementado em código (rotas `/oauth/start` e `/oauth/callback` + `getAuthUrl`/`exchangeCode` ML+Instagram) e renovação proativa do token do Instagram; falta só o end-to-end (servidor exposto)
 - v0.5 — Seção 6.1 atualizada: lado de escrita das credenciais implementado (`createAccount`/`saveCredentials`) e renovação+persistência de token do ML (o SDK não renova sozinho); pendência restante é só o fluxo OAuth de ponta
 - v0.4 — Hospedagem migrada de Railway para Oracle Cloud Always Free (refletido na stack e nos exemplos de env); nova seção 6.1 documentando a segurança implementada (criptografia AES-256-GCM de `credentials` + validação de assinatura HMAC-SHA256 dos webhooks); formato real do `ENCRYPTION_KEY` corrigido
 - v0.3 — Adicionado frontend mobile PWA (React/Vercel); arquitetura agora tem 4 serviços; seção 9 dedicada ao frontend; stack e deploy atualizados
@@ -299,8 +300,11 @@ nginx) e está fora do escopo do bridge.
   `refreshAccessToken` e **persiste** os tokens novos via `saveCredentials` — o
   ML rotaciona o `refresh_token` (single-use), então não persistir quebraria a
   renovação seguinte.
-- **Pendência restante:** o fluxo OAuth de ponta (trocar o `code` pelo primeiro
-  token via redirect URI) — Fases 7/8/10 — depende do VM com URL pública.
+- **Fluxo OAuth de ponta (código pronto):** `getAuthUrl`/`exchangeCode` nos
+  conectores ML e Instagram + rotas `/oauth/start` e `/oauth/callback`
+  (`src/webhook/oauth.js`) trocam o `code` pelo 1º token e persistem cifrado,
+  ativando a conta. Falta só o end-to-end: precisa do servidor exposto com
+  `OAUTH_REDIRECT_URI` pública (igual à registrada no app) — depende do VM/desktop.
 
 ### Validação de assinatura dos webhooks do Libredesk
 - **O quê:** quando o reply do lojista chega em `POST /webhook/libredesk`, o bridge

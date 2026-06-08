@@ -126,7 +126,8 @@ omnichannel-kaisses/          # este repositório
 │   │   └── crypto.js         # AES-256-GCM p/ ChannelAccount.credentials (ENCRYPTION_KEY)
 │   ├── webhook/
 │   │   ├── libredesk.js      # recebe replies do Libredesk
-│   │   └── evolution.js      # recebe mensagens do Evolution API
+│   │   ├── evolution.js      # recebe mensagens do Evolution API
+│   │   └── oauth.js          # /oauth/start e /oauth/callback (code→token ML/Instagram)
 │   ├── poller.js             # orquestra polling (Instagram, ML)
 │   └── index.js              # entry point
 ├── test/                     # suíte automatizada — `npm test` (node --test)
@@ -142,7 +143,8 @@ omnichannel-kaisses/          # este repositório
 │   │   └── shopee.test.js
 │   └── webhook/
 │       ├── evolution.test.js
-│       └── libredesk.test.js
+│       ├── libredesk.test.js
+│       └── oauth.test.js
 ├── docs/
 │   ├── PRD-megachat.md
 │   ├── ERD-megachat.md
@@ -232,7 +234,7 @@ falta de capacidade ("Out of host capacity" — há workflow de retry em
 mesmo stack Docker Compose no desktop do dev (sem mudança de código) — ver
 `docs/DEPLOY-desktop.md`. Enquanto isso, adiantamos o que não depende do VM:
 
-- **Suíte de testes:** `npm test` (node --test) — **81 testes**, cobrindo
+- **Suíte de testes:** `npm test` (node --test) — **94 testes**, cobrindo
   conectores, db, poller e webhooks. Ver `test/`.
 - **CI:** `.github/workflows/ci.yml` roda a suíte do bridge + o build do `web/`
   a cada push na main e em todo PR.
@@ -246,8 +248,11 @@ mesmo stack Docker Compose no desktop do dev (sem mudança de código) — ver
   `fb_exchange_token`) antes de expirar e persiste o novo + `expires_at`.
 - **Validação de assinatura dos webhooks:** HMAC-SHA256 (`X-Libredesk-Signature`)
   em `src/webhook/libredesk.js`, com `WEBHOOK_SECRET`. Ver SDD §6.1.
-- **Falta (depende do VM):** o fluxo OAuth de ponta que obtém o primeiro token
-  (troca do `code` via redirect URI) — Fases 7/8/10.
+- **Fluxo OAuth de ponta (código pronto):** `getAuthUrl`/`exchangeCode` nos
+  conectores ML e Instagram + rotas `/oauth/start` e `/oauth/callback`
+  (`src/webhook/oauth.js`) que trocam o `code` pelo token e persistem cifrado.
+  **Falta só o end-to-end** (precisa do servidor exposto com `OAUTH_REDIRECT_URI`
+  pública igual à registrada no app) — depende do VM/desktop.
 - **PWA (Fase 9) em monorepo:** scaffold runnable em `web/` (Vite + React +
   Tailwind + vite-plugin-pwa) — `npm run build` passa. Cliente da API do
   Libredesk pronto (endpoints a validar). Deploy no Vercel com Root Directory =

@@ -190,6 +190,36 @@ test('fetchNewMessages renova o token expirado, PERSISTE o token rotacionado e r
   });
 });
 
+test('getAuthUrl monta a URL de autorização com client_id, redirect_uri e state', () => {
+  // O SDK do ML monta a query sem url-encodar o redirect_uri (':' e '/' são
+  // válidos em query string); o state a gente acrescenta encodado.
+  const url = mercadolivre.getAuthUrl('https://x/oauth/callback', '42');
+  assert.match(url, /response_type=code/);
+  assert.match(url, /client_id=app-id/);
+  assert.ok(url.includes('redirect_uri=https://x/oauth/callback'));
+  assert.match(url, /state=42/);
+});
+
+test('exchangeCode troca o code pelo token e extrai o seller_id do user_id', async () => {
+  let captured;
+  await withMockNeedle({
+    post: (url, body, cb) => { captured = { url, body }; cb(null, { statusCode: 200 }, { access_token: 'AT', refresh_token: 'RT', user_id: 777 }); },
+  }, async () => {
+    const creds = await mercadolivre.exchangeCode('the-code', 'https://x/oauth/callback');
+    assert.deepEqual(creds, { access_token: 'AT', refresh_token: 'RT', seller_id: '777' });
+  });
+  assert.equal(captured.body.grant_type, 'authorization_code');
+  assert.equal(captured.body.code, 'the-code');
+});
+
+test('exchangeCode rejeita quando o ML não devolve access_token', async () => {
+  await withMockNeedle({
+    post: (_url, _body, cb) => cb(null, { statusCode: 400 }, { message: 'invalid_grant' }),
+  }, async () => {
+    await assert.rejects(() => mercadolivre.exchangeCode('bad', 'https://x/cb'), /ML authorize falhou/);
+  });
+});
+
 test('fetchNewMessages propaga erro quando o próprio refresh falha (sem access_token novo)', async () => {
   initDb();
   const { lastInsertRowid: accountId } = queries.createAccount({

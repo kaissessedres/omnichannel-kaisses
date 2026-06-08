@@ -5,6 +5,7 @@ const { initDb } = require('./db/schema');
 const { startPolling } = require('./poller');
 const evolutionWebhook = require('./webhook/evolution');
 const libredeskWebhook = require('./webhook/libredesk');
+const oauthRouter = require('./webhook/oauth');
 
 const app = express();
 // `verify` guarda o corpo bruto em req.rawBody — necessário pro webhook do
@@ -17,6 +18,7 @@ app.use(express.json({
 
 app.use('/webhook/evolution', evolutionWebhook);
 app.use('/webhook/libredesk', libredeskWebhook);
+app.use('/oauth', oauthRouter);
 
 app.get('/health', (_req, res) => res.json({ status: 'ok', ts: new Date().toISOString() }));
 

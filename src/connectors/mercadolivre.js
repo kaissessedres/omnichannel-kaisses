@@ -20,6 +20,34 @@ function getClient(creds) {
   );
 }
 
+// URL pra onde o lojista é mandado pra autorizar a conta (1ª etapa do OAuth).
+// O `state` volta no callback e identifica qual ChannelAccount está conectando.
+// O SDK não inclui `state` no getAuthURL, então a gente acrescenta.
+function getAuthUrl(redirectUri, state) {
+  return getClient({}).getAuthURL(redirectUri) + `&state=${encodeURIComponent(state)}`;
+}
+
+// Troca o `code` do redirect pelo 1º par de tokens (grant authorization_code).
+// O token do ML já devolve `user_id` (= seller_id, usado pra enviar mensagens),
+// então não precisa de chamada extra. Devolve o objeto de credenciais em texto
+// plano — quem chama persiste cifrado via saveCredentials.
+async function exchangeCode(code, redirectUri) {
+  const client = getClient({});
+  const body = await new Promise((resolve, reject) => {
+    client.authorize(code, redirectUri, (err, res) => {
+      if (err || !res || !res.access_token) {
+        return reject(new Error(`ML authorize falhou: ${err || res?.message || 'sem access_token'}`));
+      }
+      resolve(res);
+    });
+  });
+  return {
+    access_token: body.access_token,
+    refresh_token: body.refresh_token,
+    seller_id: String(body.user_id),
+  };
+}
+
 // Um 401 do ML não chega como erro do needle — vem no corpo da resposta
 // ({ message: 'invalid_token', status: 401 }). É assim que detectamos expiração.
 function isTokenExpired(body) {
@@ -115,4 +143,4 @@ async function getContact(channelAccount, userId) {
   return { name: data.nickname || userId, identifier: userId };
 }
 
-module.exports = { init, fetchNewMessages, sendMessage, getContact };
+module.exports = { init, fetchNewMessages, sendMessage, getContact, getAuthUrl, exchangeCode };

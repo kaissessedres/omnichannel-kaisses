@@ -216,6 +216,34 @@ test('fetchNewMessages NÃO renova quando o token ainda está longe de expirar',
   assert.equal(getCredentials(queries.getAccountById(id)).access_token, 'FRESH_LL');
 });
 
+test('getAuthUrl monta a URL de autorização da Meta com client_id, redirect_uri e state', () => {
+  const url = instagram.getAuthUrl('https://x/oauth/callback', '7');
+  assert.match(url, /dialog\/oauth/);
+  assert.match(url, /client_id=meta-app-id/);
+  assert.match(url, /redirect_uri=https%3A%2F%2Fx%2Foauth%2Fcallback/);
+  assert.match(url, /state=7/);
+  assert.match(url, /response_type=code/);
+});
+
+test('exchangeCode troca o code por token curto e depois por um de longa duração', async () => {
+  const urls = [];
+  await withMockFetch(async (url) => {
+    urls.push(url);
+    if (url.includes('&code=')) {
+      return { ok: true, json: async () => ({ access_token: 'SHORT', expires_in: 3600 }) };
+    }
+    // 2ª chamada: fb_exchange_token do token curto pelo longo
+    assert.match(url, /grant_type=fb_exchange_token/);
+    assert.match(url, /fb_exchange_token=SHORT/);
+    return { ok: true, json: async () => ({ access_token: 'LONG', expires_in: 5184000 }) };
+  }, async () => {
+    const creds = await instagram.exchangeCode('the-code', 'https://x/oauth/callback');
+    assert.equal(creds.access_token, 'LONG');
+    assert.ok(creds.expires_at > Date.now() + 50 * 24 * 60 * 60 * 1000);
+  });
+  assert.equal(urls.length, 2, 'deve fazer as duas trocas (curto e longo)');
+});
+
 test('refreshLongLivedToken persiste o token novo + expires_at; propaga erro se a Graph API recusar', async () => {
   initDb();
   const { lastInsertRowid: id } = queries.createAccount({
@@ -232,6 +260,6 @@ test('refreshLongLivedToken persiste o token novo + expires_at; propaga erro se 
   assert.equal(getCredentials(queries.getAccountById(id)).access_token, 'LL_2');
 
   await withMockFetch(async () => ({ ok: false, status: 400, text: async () => 'invalid token' }), async () => {
-    await assert.rejects(() => instagram.refreshLongLivedToken(queries.getAccountById(id)), /Instagram refresh de token falhou: 400/);
+    await assert.rejects(() => instagram.refreshLongLivedToken(queries.getAccountById(id)), /Instagram exchange de token falhou: 400/);
   });
 });
