@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ChevronLeft, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { listMessages, sendReply, resolveConversation } from '../api/libredesk.js';
+import { conversationGroup } from '../lib/inboxes.js';
 import MessageThread from '../components/MessageThread.jsx';
 import ReplyBox from '../components/ReplyBox.jsx';
 import ChannelBadge from '../components/ChannelBadge.jsx';
@@ -45,7 +46,10 @@ export default function Conversation({ conversation, onBack }) {
           <ChevronLeft className="h-6 w-6" />
         </button>
         <ChannelBadge channel={conversation.channel || conversation.inbox?.channel_type} />
-        <span className="flex-1 truncate font-medium">{conversation.contact?.name || `#${conversation.id}`}</span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate font-medium leading-tight">{conversation.contact?.name || `#${conversation.id}`}</span>
+          <span className="block truncate text-xs text-slate-400">{conversationGroup(conversation).label}</span>
+        </span>
         <button onClick={resolve} className="flex items-center gap-1 text-sm text-slate-400 hover:text-slate-100">
           <CheckCircle2 className="h-4 w-4" /> Resolver
         </button>

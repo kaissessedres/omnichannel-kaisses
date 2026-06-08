@@ -17,11 +17,20 @@ export function disableDemo() { localStorage.removeItem(KEY); }
 const min = 60_000;
 const ago = (ms) => new Date(Date.now() - ms).toISOString();
 
+const INBOX = {
+  whatsapp: { id: 7, channel_type: 'whatsapp', name: 'WhatsApp' },
+  instagram: { id: 5, channel_type: 'instagram', name: 'Instagram' },
+  ml1: { id: 3, channel_type: 'mercadolivre', name: 'Mercado Livre 1' },
+  ml2: { id: 4, channel_type: 'mercadolivre', name: 'Mercado Livre 2' },
+  shopee: { id: 8, channel_type: 'shopee', name: 'Shopee 1' },
+};
+
 export const demoConversations = [
-  { id: 'c1', channel: 'whatsapp',     contact: { name: 'Marina Souza' },  last_message: 'Oi! A caneca personalizada já saiu?', last_activity_at: ago(3 * min), unread_count: 2 },
-  { id: 'c2', channel: 'instagram',    contact: { name: 'ateliê.gabi' },    last_message: 'Amei o orçamento, vou fechar 💜',       last_activity_at: ago(40 * min) },
-  { id: 'c3', channel: 'mercadolivre', contact: { name: 'João P.' },        last_message: 'Consigo retirar amanhã de manhã?',     last_activity_at: ago(3 * 60 * min) },
-  { id: 'c4', channel: 'shopee',       contact: { name: 'Loja do Léo' },    last_message: 'Tem desconto pra pedido no atacado?',  last_activity_at: ago(26 * 60 * min), unread_count: 1 },
+  { id: 'c1', channel: 'whatsapp',     inbox: INBOX.whatsapp,  contact: { name: 'Marina Souza' }, last_message: 'Oi! A caneca personalizada já saiu?', last_activity_at: ago(3 * min), unread_count: 2 },
+  { id: 'c2', channel: 'instagram',    inbox: INBOX.instagram, contact: { name: 'ateliê.gabi' },   last_message: 'Amei o orçamento, vou fechar 💜',      last_activity_at: ago(40 * min) },
+  { id: 'c3', channel: 'mercadolivre', inbox: INBOX.ml1,       contact: { name: 'João P.' },       last_message: 'Consigo retirar amanhã de manhã?',    last_activity_at: ago(3 * 60 * min) },
+  { id: 'c5', channel: 'mercadolivre', inbox: INBOX.ml2,       contact: { name: 'Bruna L.' },      last_message: 'Chega quando pro CEP 30110-000?',     last_activity_at: ago(5 * 60 * min), unread_count: 3 },
+  { id: 'c4', channel: 'shopee',       inbox: INBOX.shopee,    contact: { name: 'Loja do Léo' },   last_message: 'Tem desconto pra pedido no atacado?', last_activity_at: ago(26 * 60 * min), unread_count: 1 },
 ];
 
 export const demoMessages = {
@@ -37,6 +46,11 @@ export const demoMessages = {
   ],
   c3: [
     { id: 'c3m1', message_type: 'incoming', content: 'Consigo retirar amanhã de manhã?', created_at: ago(3 * 60 * min) },
+  ],
+  c5: [
+    { id: 'c5m1', message_type: 'incoming', content: 'Oi! Comprei a moldura personalizada', created_at: ago(6 * 60 * min) },
+    { id: 'c5m2', message_type: 'outgoing', content: 'Oi Bruna! Já está em produção 🙌', created_at: ago(5.2 * 60 * min) },
+    { id: 'c5m3', message_type: 'incoming', content: 'Chega quando pro CEP 30110-000?', created_at: ago(5 * 60 * min) },
   ],
   c4: [
     { id: 'c4m1', message_type: 'incoming', content: 'Tem desconto pra pedido no atacado?', created_at: ago(26 * 60 * min) },

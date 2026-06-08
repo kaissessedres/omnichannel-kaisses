@@ -1,5 +1,5 @@
 import { afterEach, describe, it, expect, vi } from 'vitest';
-import { render, screen, waitFor, cleanup } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, cleanup } from '@testing-library/react';
 import Inbox from './Inbox.jsx';
 
 afterEach(() => {
@@ -39,5 +39,26 @@ describe('Inbox', () => {
     render(<Inbox onOpen={() => {}} onLogout={() => {}} />);
 
     await waitFor(() => expect(screen.getByText(/nenhuma conversa aberta/i)).toBeTruthy());
+  });
+
+  it('mostra abas por conta e filtra a lista ao trocar de aba', async () => {
+    auth();
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true, status: 200,
+      json: async () => ({ data: [
+        { id: 1, channel: 'whatsapp', inbox: { id: 7, channel_type: 'whatsapp', name: 'WhatsApp' }, contact: { name: 'Cliente WA' } },
+        { id: 2, channel: 'mercadolivre', inbox: { id: 3, channel_type: 'mercadolivre', name: 'Mercado Livre 1' }, contact: { name: 'Cliente ML' } },
+      ] }),
+    }));
+    render(<Inbox onOpen={() => {}} onLogout={() => {}} />);
+
+    // ambos aparecem na aba "Todos"
+    await waitFor(() => expect(screen.getByText('Cliente WA')).toBeTruthy());
+    expect(screen.getByText('Cliente ML')).toBeTruthy();
+
+    // troca pra aba "Mercado Livre 1" → some o de WhatsApp
+    fireEvent.click(screen.getByRole('button', { name: /Mercado Livre 1/ }));
+    expect(screen.getByText('Cliente ML')).toBeTruthy();
+    expect(screen.queryByText('Cliente WA')).toBeNull();
   });
 });
