@@ -23,4 +23,12 @@ describe('MessageThread', () => {
     expect(row.className).toMatch(/chat-end/);          // alinhada à direita
     expect(row.textContent).toMatch(/\d{2}:\d{2}/);     // horário (HH:MM)
   });
+
+  it('renderiza anexo de imagem como <img>', () => {
+    render(<MessageThread messages={[
+      { id: 'm1', message_type: 'incoming', attachments: [{ file_type: 'image/png', data_url: 'data:image/png;base64,AAA', file_name: 'foto.png' }] },
+    ]} />);
+    const img = screen.getByRole('img');
+    expect(img.getAttribute('src')).toContain('data:image/png');
+  });
 });

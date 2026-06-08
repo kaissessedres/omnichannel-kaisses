@@ -29,8 +29,8 @@ export default function Conversation({ conversation, onBack }) {
 
   useEffect(() => { load(); }, [conversation.id]);
 
-  async function reply(text) {
-    await sendReply(conversation.id, text);
+  async function reply(text, attachment) {
+    await sendReply(conversation.id, text, attachment);
     await load();
   }
 

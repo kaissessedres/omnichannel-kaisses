@@ -17,6 +17,16 @@ export function disableDemo() { localStorage.removeItem(KEY); }
 const min = 60_000;
 const ago = (ms) => new Date(Date.now() - ms).toISOString();
 
+// "Foto de produto" de exemplo (SVG inline — funciona offline, sem asset).
+const PRODUCT_IMG = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="260" height="180">'
+  + '<rect width="260" height="180" rx="14" fill="#6366f1"/>'
+  + '<circle cx="130" cy="78" r="34" fill="#fff" opacity="0.9"/>'
+  + '<rect x="150" y="64" width="22" height="28" rx="4" fill="#fff" opacity="0.9"/>'
+  + '<text x="130" y="150" font-size="18" fill="#fff" text-anchor="middle" font-family="sans-serif">Arte das canecas</text>'
+  + '</svg>'
+);
+
 const INBOX = {
   whatsapp: { id: 7, channel_type: 'whatsapp', name: 'WhatsApp' },
   instagram: { id: 5, channel_type: 'instagram', name: 'Instagram' },
@@ -41,8 +51,9 @@ export const demoMessages = {
   ],
   c2: [
     { id: 'c2m1', message_type: 'incoming', content: 'Oii, vi o post das canecas de casal', created_at: ago(55 * min) },
-    { id: 'c2m2', message_type: 'outgoing', content: 'Oi Gabi! O par sai por R$ 79, com a arte que você quiser.', created_at: ago(45 * min) },
-    { id: 'c2m3', message_type: 'incoming', content: 'Amei o orçamento, vou fechar 💜', created_at: ago(40 * min) },
+    { id: 'c2m2', message_type: 'outgoing', content: 'Oi Gabi! Olha como ficou a arte 👇', created_at: ago(50 * min), attachments: [{ file_type: 'image', data_url: PRODUCT_IMG, file_name: 'arte-canecas.png' }] },
+    { id: 'c2m3', message_type: 'outgoing', content: 'O par sai por R$ 79, com a arte que você quiser.', created_at: ago(45 * min) },
+    { id: 'c2m4', message_type: 'incoming', content: 'Amei o orçamento, vou fechar 💜', created_at: ago(40 * min) },
   ],
   c3: [
     { id: 'c3m1', message_type: 'incoming', content: 'Consigo retirar amanhã de manhã?', created_at: ago(3 * 60 * min) },
@@ -59,13 +70,17 @@ export const demoMessages = {
 
 // Simula o envio: acrescenta a mensagem do lojista à conversa em memória (reseta
 // ao recarregar a página — é só demonstração).
-export function demoSend(conversationId, content) {
-  (demoMessages[conversationId] ||= []).push({
+export function demoSend(conversationId, content, attachment) {
+  const msg = {
     id: `d${Date.now()}`,
     message_type: 'outgoing',
-    content,
+    content: content || '',
     created_at: new Date().toISOString(),
-  });
+  };
+  if (attachment?.url) {
+    msg.attachments = [{ file_type: attachment.type, data_url: attachment.url, file_name: attachment.name }];
+  }
+  (demoMessages[conversationId] ||= []).push(msg);
 }
 
 const SAMPLE_INCOMING = [

@@ -77,9 +77,30 @@ export function listMessages(conversationId) {
   return request(accountPath(`/conversations/${conversationId}/messages`));
 }
 
-// Enviar resposta do lojista
-export function sendReply(conversationId, content) {
-  if (isDemo()) { demoSend(conversationId, content); return Promise.resolve({}); }
+// Enviar resposta do lojista (com anexo opcional de imagem/vídeo)
+export function sendReply(conversationId, content, attachment) {
+  if (isDemo()) { demoSend(conversationId, content, attachment); return Promise.resolve({}); }
+
+  // Com anexo: upload multipart. ⚠️ Os nomes dos campos (content/attachments[])
+  // seguem o padrão Chatwoot e PRECISAM ser validados contra a API real do
+  // Libredesk — centralizados aqui pra ajuste trivial.
+  if (attachment?.file) {
+    const auth = getAuth();
+    if (!auth) throw new Error('Não autenticado — configure URL e API key do Libredesk');
+    const form = new FormData();
+    if (content) form.append('content', content);
+    form.append('attachments[]', attachment.file);
+    const base = auth.url.replace(/\/$/, '');
+    return fetch(`${base}${accountPath(`/conversations/${conversationId}/messages`)}`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${auth.apiKey}` }, // sem Content-Type: o browser põe o boundary do multipart
+      body: form,
+    }).then(async (res) => {
+      if (!res.ok) throw new Error(`Libredesk POST → ${res.status}`);
+      return res.status === 204 ? null : res.json();
+    });
+  }
+
   return request(accountPath(`/conversations/${conversationId}/messages`), {
     method: 'POST',
     body: { content },
