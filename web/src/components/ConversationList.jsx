@@ -16,16 +16,23 @@ export default function ConversationList({ conversations, onOpen }) {
         const name = c.contact?.name || c.meta?.sender?.name || `#${c.id}`;
         const preview = c.last_message || c.messages?.[0]?.content || '';
         const when = formatRelative(c.last_activity_at || c.updated_at || c.created_at);
+        const unread = c.unread_count || 0;
         return (
           <li key={c.id}>
-            <button onClick={() => onOpen(c)} className="flex w-full items-center gap-3 px-4 py-3 text-left active:bg-slate-800">
+            <button
+              onClick={() => onOpen(c)}
+              className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-slate-800/60 active:bg-slate-800"
+            >
               <ChannelBadge channel={c.channel || c.inbox?.channel_type} />
               <span className="min-w-0 flex-1">
                 <span className="flex items-baseline justify-between gap-2">
-                  <span className="truncate font-medium">{name}</span>
+                  <span className={`truncate ${unread ? 'font-semibold text-slate-100' : 'font-medium'}`}>{name}</span>
                   {when && <span className="shrink-0 text-xs text-slate-500">{when}</span>}
                 </span>
-                <span className="block truncate text-sm text-slate-400">{preview}</span>
+                <span className="flex items-center gap-2">
+                  <span className={`block flex-1 truncate text-sm ${unread ? 'text-slate-300' : 'text-slate-400'}`}>{preview}</span>
+                  {unread > 0 && <span className="badge badge-primary badge-sm shrink-0">{unread}</span>}
+                </span>
               </span>
             </button>
           </li>

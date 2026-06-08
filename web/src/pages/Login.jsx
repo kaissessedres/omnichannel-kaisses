@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { saveAuth, verifyConnection } from '../api/libredesk.js';
+import { enableDemo } from '../api/demo.js';
 
 // Primeira abertura: pede o endereço do Libredesk + a chave de acesso (API key)
 // e guarda no localStorage (ver "Autenticação" em docs/CLAUDE-pwa.md). Ao entrar,
@@ -119,6 +120,15 @@ export default function Login({ onAuthed }) {
             Entrar mesmo assim
           </button>
         )}
+
+        <div className="divider text-xs text-slate-500">ou</div>
+        <button
+          type="button"
+          onClick={() => { enableDemo(); onAuthed(); }}
+          className="btn btn-ghost btn-sm w-full text-slate-300"
+        >
+          Ver demonstração (sem conta)
+        </button>
       </form>
     </div>
   );

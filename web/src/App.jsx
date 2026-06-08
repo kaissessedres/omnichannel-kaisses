@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { getAuth } from './api/libredesk.js';
+import { isDemo } from './api/demo.js';
 import Login from './pages/Login.jsx';
 import Inbox from './pages/Inbox.jsx';
 import Conversation from './pages/Conversation.jsx';
@@ -8,7 +9,7 @@ import Conversation from './pages/Conversation.jsx';
 // telas): login → inbox → conversa aberta. Mantém as dependências enxutas,
 // no espírito de "fetch nativo, sem biblioteca extra" do projeto.
 export default function App() {
-  const [authed, setAuthed] = useState(() => !!getAuth());
+  const [authed, setAuthed] = useState(() => !!getAuth() || isDemo());
   const [openConversation, setOpenConversation] = useState(null);
 
   if (!authed) return <Login onAuthed={() => setAuthed(true)} />;

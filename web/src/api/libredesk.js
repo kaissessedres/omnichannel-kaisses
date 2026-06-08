@@ -8,6 +8,8 @@
 //    instância. Estão centralizados aqui de propósito: quando a API real for
 //    confirmada, o ajuste é só neste arquivo.
 
+import { isDemo, disableDemo, demoConversations, demoMessages, demoSend } from './demo.js';
+
 const STORAGE_KEY = 'megachat.auth';
 
 // Autenticação fica no localStorage (ver "Autenticação" em docs/CLAUDE-pwa.md):
@@ -27,6 +29,7 @@ export function saveAuth({ url, apiKey, accountId }) {
 
 export function clearAuth() {
   localStorage.removeItem(STORAGE_KEY);
+  disableDemo();
 }
 
 function request(path, { method = 'GET', body } = {}) {
@@ -56,6 +59,7 @@ function accountPath(suffix = '') {
 
 // Conversas abertas (tela principal)
 export function listConversations(status = 'open') {
+  if (isDemo()) return Promise.resolve({ data: demoConversations });
   return request(`${accountPath('/conversations')}?status=${encodeURIComponent(status)}`);
 }
 
@@ -67,11 +71,13 @@ export async function verifyConnection() {
 
 // Mensagens de uma conversa (thread)
 export function listMessages(conversationId) {
+  if (isDemo()) return Promise.resolve({ data: demoMessages[conversationId] || [] });
   return request(accountPath(`/conversations/${conversationId}/messages`));
 }
 
 // Enviar resposta do lojista
 export function sendReply(conversationId, content) {
+  if (isDemo()) { demoSend(conversationId, content); return Promise.resolve({}); }
   return request(accountPath(`/conversations/${conversationId}/messages`), {
     method: 'POST',
     body: { content },
@@ -80,6 +86,7 @@ export function sendReply(conversationId, content) {
 
 // Marcar conversa como resolvida
 export function resolveConversation(conversationId) {
+  if (isDemo()) return Promise.resolve(null);
   return request(accountPath(`/conversations/${conversationId}`), {
     method: 'PATCH',
     body: { status: 'resolved' },

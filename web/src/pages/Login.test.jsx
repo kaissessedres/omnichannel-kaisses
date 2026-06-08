@@ -47,6 +47,14 @@ describe('Login', () => {
     expect(JSON.parse(localStorage.getItem('megachat.auth')).url).toBe('https://ld.example');
   });
 
+  it('"Ver demonstração" entra sem conta e liga o modo demo', () => {
+    const onAuthed = vi.fn();
+    render(<Login onAuthed={onAuthed} />);
+    fireEvent.click(screen.getByRole('button', { name: /ver demonstração/i }));
+    expect(onAuthed).toHaveBeenCalledOnce();
+    expect(localStorage.getItem('megachat.demo')).toBe('1');
+  });
+
   it('quando a conexão falha, mostra erro e oferece "Entrar mesmo assim"', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 401 }));
     const onAuthed = vi.fn();
